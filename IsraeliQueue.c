@@ -1,6 +1,8 @@
 #include "IsraeliQueue.h"
 #include <stdio.h>
-
+#define NUM_OF_FRIENDS 5
+#define NUM_OF_RIVALS 3
+ 
 typedef struct FriendshipList {
     FriendshipFunction m_function;
     struct FriendshipList* m_next;
@@ -45,8 +47,8 @@ IsraeliList createIsraeliListNode(const void* item)
         return NULL;
     }
     list->m_item = item;
-    list->m_friends = 5;
-    list->m_rivals = 3;
+    list->m_friends = NUM_OF_FRIENDS;
+    list->m_rivals = NUM_OF_RIVALS;
     list->m_next = NULL;
     return list;
 }
@@ -108,42 +110,62 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
         return ISRAELIQUEUE_BAD_PARAM;
     }
     IsraeliList runner = q->m_listHead, placeHolder = q->m_listHead;
-    bool flag = true;
-    while(runner->m_next)
+    bool foundRival = false;
+    bool found = false;
+    while(!found && runner->m_next)
     {
         if(isFriend(runner, item, q))
         {
             placeHolder = runner;
-            while(runner->m_next && flag)
+            while(runner->m_next && !foundRival)
             {
                 runner = runner->m_next;
                 if(isRival(runner, item, q))
                 {
-                    flag = false;
+                    foundRival = true;
                 }
             }
+            if(foundRival)
+            {
+                foundRival = false;
+            }
+            else
+            {
+                found = true;
+            }
         }
-        if(!flag)
+        if(!found)
+        {   
+            runner = runner->m_next;
+        }
+        else
         {
             placeHolder = runner;
-            flag = true;
-            runner = runner->m_next;
-        } 
+        }
     }
-    if(!flag)
-    {
-        placeHolder = NULL
-    }
+    return insertNode(placeHolder, item);    
+}
 
-    if(insertNode(placeHolder, item))
+IsraeliQueueError insertNode (IsraeliList node, const void * item)
+{
+    IsraeliList next= createIsraeliListNode(item);
+    if(!next)
     {
-        return ISRAELIQUEUE_SUCCESS;
+        return ISRAELIQUEUE_ALLOC_FAILED;
     }
-    return ISRAELIQUEUE_ALLOC_FAILED; 
+    IsraeliList temp = node->m_next;
+    node->m_next = next;
+    next->m_next = temp;
+    node->m_friends++;
+    return ISRAELIQUEUE_SUCCESS;
 }
 
 bool isFriend(const IsraeliList node, const void * item, const IsraeliQueue q)
 {
+    if(node->m_friends > NUM_OF_FRIENDS)
+    {
+        return false;
+    }
     FriendshipList runner = q->m_listFrindshipHead;
     while(runner)
     {
@@ -158,6 +180,10 @@ bool isFriend(const IsraeliList node, const void * item, const IsraeliQueue q)
 
 bool isRival(const IsraeliList node, const void * item, const IsraeliQueue q)
 {
+    if(node->m_rivals > NUM_OF_RIVALS)
+    {
+        return false;
+    }
     FriendshipList runner = q->m_listFrindshipHead;
     int counter = 0, average = 0;
     if(isFriend(node, item, q))
@@ -172,3 +198,16 @@ bool isRival(const IsraeliList node, const void * item, const IsraeliQueue q)
     }
     return ((double)average/counter) < (double) q->m_rivalry;
 }
+
+IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue q, FriendshipFunction function)
+{
+    FriendshipList next = createFriendshipListNode(function);
+    if(!next)
+    {
+        return ISRAELIQUEUE_ALLOC_FAILED;
+    }
+    next->m_next = q->m_listFrindshipHead;
+    q->m_listFrindshipHead = next;
+    return ISRAELIQUEUE_SUCCESS;
+}
+
