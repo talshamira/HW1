@@ -1,5 +1,6 @@
 #include "IsraeliQueue.h"
 #include <stdio.h>
+#include <math.h>
 #define NUM_OF_FRIENDS 5
 #define NUM_OF_RIVALS 3
  
@@ -35,7 +36,8 @@ typedef struct IsraeliList {
     void* m_item;
     int m_friends;
     int m_rivals;
-    struct IsraeliList* m_next;
+    struct IsraeliList* m_Right;
+    struct IsraeliList* m_Left;
     
 } *IsraeliList;
 
@@ -49,7 +51,8 @@ IsraeliList createIsraeliListNode(const void* item)
     list->m_item = item;
     list->m_friends = NUM_OF_FRIENDS;
     list->m_rivals = NUM_OF_RIVALS;
-    list->m_next = NULL;
+    list->m_Right = NULL;
+    list->m_Left = NULL;
     return list;
 }
 
@@ -58,7 +61,7 @@ void destroyIsraeliList(IsraeliList listHead)
     while(listHead)
     {
         IsraeliList toDelete = listHead;
-        listHead = listHead->m_next;
+        listHead = listHead->m_Right;
         free(toDelete);
     }
 }
@@ -73,17 +76,26 @@ struct IsraeliQueue_t
     ComparisonFunction m_compare;
 };
 
-void copyFriendshipFunctions(FriendshipFunction * frindship, FriendshipList listHead)
+bool copyFriendshipFunctions(FriendshipFunction * frindship, FriendshipList listHead)
 {
     int counter = 0;
-    listHead = createFriendshipListNode(frindship[counter]); //if Null need to check what to do
+    listHead = createFriendshipListNode(frindship[counter]); 
+    if(!listHead)
+    {
+        return false;
+    }
     FriendshipList runner = listHead;
     while(frindship[counter])
     {
         counter++;
-        runner->m_next = createFriendshipListNode(frindship[counter]); // same check
+        runner->m_next = createFriendshipListNode(frindship[counter]); 
+        if(!runner->m_next)
+        {
+            return false;
+        }
         runner = runner->m_next;
     }
+    return true;
 }
 
 IsraeliQueue IsraeliQueueCreate(FriendshipFunction * frindship, ComparisonFunction compare, 
@@ -96,8 +108,17 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction * frindship, ComparisonFuncti
     }
     israeliLine->m_rivalry=rivalryThershold;
     israeliLine->m_frindshipThershold = friendshipThershold;
-    israeliLine->m_listHead = createIsraeliListNode(NULL); //if Null check what to do
-    copyFriendshipFunctions(frindship, israeliLine->m_listFrindshipHead);
+    israeliLine->m_listHead = createIsraeliListNode(NULL); 
+    if(!israeliLine->m_listHead)
+    {
+        IsraeliQueueDestroy(israeliLine);
+        return NULL;
+    }
+    if(!copyFriendshipFunctions(frindship, israeliLine->m_listFrindshipHead))
+    {
+        IsraeliQueueDestroy(israeliLine);
+        return NULL; 
+    }
     israeliLine->m_size = 0;
     israeliLine->m_compare = compare;
     return israeliLine;
@@ -112,14 +133,14 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
     IsraeliList runner = q->m_listHead, placeHolder = q->m_listHead;
     bool foundRival = false;
     bool found = false;
-    while(!found && runner->m_next)
+    while(!found && runner->m_Right)
     {
         if(isFriend(runner, item, q))
         {
             placeHolder = runner;
-            while(runner->m_next && !foundRival)
+            while(runner->m_Right && !foundRival)
             {
-                runner = runner->m_next;
+                runner = runner->m_Right;
                 if(isRival(runner, item, q))
                 {
                     foundRival = true;
@@ -136,27 +157,28 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
         }
         if(!found)
         {   
-            runner = runner->m_next;
+            runner = runner->m_Right;
         }
         else
         {
             placeHolder = runner;
         }
     }
-    return insertNode(placeHolder, item);    
+    return insertNode(placeHolder, q, item);    
 }
 
-IsraeliQueueError insertNode (IsraeliList node, const void * item)
+IsraeliQueueError insertNode (IsraeliList node,IsraeliQueue q, const void * item)
 {
     IsraeliList next= createIsraeliListNode(item);
     if(!next)
     {
         return ISRAELIQUEUE_ALLOC_FAILED;
     }
-    IsraeliList temp = node->m_next;
-    node->m_next = next;
-    next->m_next = temp;
+    IsraeliList temp = node->m_Right;
+    node->m_Right = next;
+    next->m_Right = temp;
     node->m_friends++;
+    q->m_size++;
     return ISRAELIQUEUE_SUCCESS;
 }
 
@@ -211,3 +233,230 @@ IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue q, FriendshipFun
     return ISRAELIQUEUE_SUCCESS;
 }
 
+
+IsraeliQueueError IsraeliQueueUpdateFriendshipThreshold(IsraeliQueue q, int thershold)
+{
+    q->m_frindshipThershold = thershold;
+    return ISRAELIQUEUE_SUCCESS;
+}
+
+IsraeliQueueError IsraeliQueueUpdateRivalryThreshold(IsraeliQueue q, int thershold)
+{
+    q->m_rivalry = thershold;
+    return ISRAELIQUEUE_SUCCESS;
+}
+
+int IsraeliQueueSize(IsraeliQueue q)
+{
+    return q->m_size;
+}
+
+bool IsraeliQueueContains(IsraeliQueue q, void * item)
+{
+    if(!item || !q || !q->m_listHead || !q->m_compare)
+    {
+        return false;
+    }
+    IsraeliList runner = q->m_listHead;
+    while(runner)
+    {
+        if(q->m_compare(runner,item))
+        {
+            return true;
+        }
+        runner = runner->m_Right;
+    }
+    return false;
+}
+
+void* IsraeliQueueDequeue(IsraeliQueue q)
+{
+    if(!q || !q->m_listHead)
+    {
+        return NULL;
+    }
+    IsraeliList head = q->m_listHead;
+    q->m_listHead = q->m_listHead->m_Right;
+    return head;
+}
+
+IsraeliQueue IsraeliQueueMerge(IsraeliQueue* q, ComparisonFunction compare)
+{
+    if(!q, !compare)
+    {
+        return NULL;
+    }
+    IsraeliQueue merged = IsraeliQueueCreate(NULL, compare,0,0);
+    if(!merged)
+    {
+        return NULL;
+    }
+    int maxLength = FindMaxLength(q), listSize = FindListSize(q);
+    IsraeliList * runners = (IsraeliList *) malloc(sizeof(runners)*listSize + 1);
+    if(!runners)
+    {
+        return NULL;
+    }
+    for (int i = 0; i < listSize; i++)
+    {
+        runners[i] = q[i]->m_listHead;
+    }
+    runners[listSize] = merged->m_listHead;
+    for(int i = 0; i < maxLength; i++)
+    {
+        for(int j = 0; j < listSize; j++)
+        {
+            if(runners[j])
+            {
+                runners[listSize] = createIsraeliListNode(runners[j]->m_item);
+                if(!runners[listSize])
+                {
+                    IsraeliQueueDestroy(merged);
+                    return NULL;
+                }
+                runners[listSize] = runners[listSize]->m_Right;
+            }
+            runners[j] = runners[j]->m_Right;
+        }
+    }
+    merged->m_frindshipThershold = GetAverage(q);
+    merged->m_rivalry = GetGeomtricAverage(q);
+    if(!MergeFriendship(q,merged))
+    {
+        IsraeliQueueDestroy(merged);
+        return NULL;
+    }
+    return merged;
+}
+
+IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
+{
+    if(!q)
+    {
+        return NULL;
+    }
+    IsraeliQueue newQueue = IsraeliQueueCreate(NULL, q->m_compare, q->m_frindshipThershold, q->m_rivalry);
+    if(!newQueue)
+    {
+        return NULL;
+    }
+    IsraeliList oldListRunner = q->m_listHead;
+    IsraeliList newListRunner = newQueue->m_listHead;
+    while(oldListRunner)
+    {
+        newListRunner = createIsraeliListNode(oldListRunner->m_item);
+        if(!newListRunner)
+        {
+            IsraeliQueueDestroy(newQueue);
+            return NULL;
+        }
+        oldListRunner = oldListRunner->m_Right;
+        newListRunner = newListRunner->m_Right;
+    }
+    FriendshipList oldFriendshipRunner = q->m_listFrindshipHead;
+    FriendshipList newfriendshipRunner = newQueue->m_listFrindshipHead;
+    while(oldFriendshipRunner)
+    {
+        newfriendshipRunner = createFriendshipListNode(oldFriendshipRunner->m_function);
+        if(!newfriendshipRunner)
+        {
+           IsraeliQueueDestroy(newQueue);
+            return NULL; 
+        }
+        oldFriendshipRunner = oldFriendshipRunner->m_next;
+        newfriendshipRunner = newfriendshipRunner->m_next;
+    }
+    return newQueue;
+}
+
+bool MergeFriendship (const IsraeliQueue* q, const IsraeliQueue merged)
+{
+    int counterList = 0;
+    FriendshipList runnerMerged = merged->m_listFrindshipHead;
+        while(q[counterList])
+        {
+            FriendshipList runnerList = q[counterList]->m_listFrindshipHead;
+            while (runnerList)
+            {
+                    runnerMerged = createFriendshipListNode(runnerList->m_function);
+                    if(!runnerMerged)
+                    {
+                        return false;
+                    }
+                    runnerMerged = runnerMerged->m_next;
+                    runnerList = runnerList->m_next;
+            }
+            counterList++;
+        }
+    return true;
+}
+
+int getAverage(IsraeliQueue* q)
+{
+    int counter = 0, average = 0;
+    while(q[counter])
+    {
+        average += q[counter]->m_frindshipThershold;
+        counter++;
+    }
+    return (int) ceil((double) average/ (double) counter);
+}
+
+int GetGeomtricAverage(const IsraeliQueue* q)
+{
+    int average = 1, counter = 0;
+    while(q[counter])
+    {
+        average *= abs(q[counter]->m_rivalry);
+        counter++;
+    }
+    return (int) ceil(exp(log(average)/counter));
+
+}
+
+int FindMaxLength(const IsraeliQueue* q)
+{
+    int max = 0, counter = 0;
+    while(q[counter])
+    {
+        if(q[counter]->m_size > max)
+        {
+            max = q[counter]->m_size;
+        }
+        counter++;
+    }
+    return max;
+}
+
+int FindListSize(const IsraeliQueue* q)
+{
+    int counter = 0;
+    while(q[counter])
+    {
+        counter++;
+    }
+    return counter;
+}
+
+void IsraeliQueueDestroy(IsraeliQueue q)
+{
+    if(!q)
+    {
+        return;
+    }
+    if(q->m_listHead)
+    {
+        destroyIsraeliList(q->m_listHead);
+    }
+    if(q->m_listFrindshipHead)
+    {
+        destroyFrindshipList(q->m_listFrindshipHead);
+    }
+    free(q);
+}
+
+
+IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue q)
+{
+    
+}
