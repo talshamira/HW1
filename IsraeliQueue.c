@@ -36,6 +36,7 @@ typedef struct IsraeliList {
     void* m_item;
     int m_friends;
     int m_rivals;
+    bool m_moved;
     struct IsraeliList* m_Right;
     struct IsraeliList* m_Left;
     
@@ -51,6 +52,7 @@ IsraeliList createIsraeliListNode(const void* item)
     list->m_item = item;
     list->m_friends = NUM_OF_FRIENDS;
     list->m_rivals = NUM_OF_RIVALS;
+    list->m_moved = false;
     list->m_Right = NULL;
     list->m_Left = NULL;
     return list;
@@ -126,43 +128,10 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction * frindship, ComparisonFuncti
 
 IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
 {
-    if(!item || !q->m_listHead || !q->m_compare)
+    IsraeliList placeHolder = findPlaceToEnter(q, item);
+    if(!placeHolder)
     {
         return ISRAELIQUEUE_BAD_PARAM;
-    }
-    IsraeliList runner = q->m_listHead, placeHolder = q->m_listHead;
-    bool foundRival = false;
-    bool found = false;
-    while(!found && runner->m_Right)
-    {
-        if(isFriend(runner, item, q))
-        {
-            placeHolder = runner;
-            while(runner->m_Right && !foundRival)
-            {
-                runner = runner->m_Right;
-                if(isRival(runner, item, q))
-                {
-                    foundRival = true;
-                }
-            }
-            if(foundRival)
-            {
-                foundRival = false;
-            }
-            else
-            {
-                found = true;
-            }
-        }
-        if(!found)
-        {   
-            runner = runner->m_Right;
-        }
-        else
-        {
-            placeHolder = runner;
-        }
     }
     return insertNode(placeHolder, q, item);    
 }
@@ -458,5 +427,87 @@ void IsraeliQueueDestroy(IsraeliQueue q)
 
 IsraeliQueueError IsraeliQueueImprovePositions(IsraeliQueue q)
 {
+    if(!q || !q->m_listHead)
+    {
+        return ISRAELIQUEUE_BAD_PARAM;
+    }
+    IsraeliList runner = q->m_listHead;
+    while(runner)
+    {
+        runner = runner->m_Right;
+    }
     
+    for (int i = q->m_size-1; i >= 0; i--)
+    {
+        while(runner->m_moved)
+        {
+            runner = runner->m_Left;
+        }
+        IsraeliList tmp = runner;
+        runner = runner->m_Left;
+        runner->m_Right = tmp->m_Right;
+        IsraeliQueueError error = IsraeliQueueReenter(q,tmp);
+        if(error != ISRAELIQUEUE_SUCCESS)
+        {
+            return error;
+        }
+    }
+    return ISRAELIQUEUE_SUCCESS;
+}
+
+IsraeliList findPlaceToEnter (IsraeliQueue q, void * item)
+{
+    if(!item || !q->m_listHead || !q->m_compare)
+    {
+        return NULL;
+    }
+    IsraeliList runner = q->m_listHead, placeHolder = q->m_listHead;
+    bool foundRival = false;
+    bool found = false;
+    while(!found && runner->m_Right)
+    {
+        if(isFriend(runner, item, q))
+        {
+            placeHolder = runner;
+            while(runner->m_Right && !foundRival)
+            {
+                runner = runner->m_Right;
+                if(isRival(runner, item, q))
+                {
+                    foundRival = true;
+                }
+            }
+            if(foundRival)
+            {
+                foundRival = false;
+            }
+            else
+            {
+                found = true;
+            }
+        }
+        if(!found)
+        {   
+            runner = runner->m_Right;
+        }
+        else
+        {
+            placeHolder = runner;
+        }
+    }
+    return placeHolder;
+}
+
+IsraeliQueueError IsraeliQueueReenter (IsraeliQueue q, IsraeliList node)
+{
+    IsraeliList placeHolder = findPlaceToEnter (q, node->m_item);
+    if(!placeHolder)
+    {
+        return ISRAELIQUEUE_BAD_PARAM;
+    }
+    node->m_Left = placeHolder;
+    node->m_Right = placeHolder->m_Right;
+    placeHolder->m_Right = node;
+    node->m_Right->m_Left = node;
+    return ISRAELIQUEUE_SUCCESS;
 }
