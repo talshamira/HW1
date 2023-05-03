@@ -246,6 +246,7 @@ void* IsraeliQueueDequeue(IsraeliQueue q)
     }
     IsraeliList head = q->m_listHead;
     q->m_listHead = q->m_listHead->m_Right;
+    q->m_size--;
     return head;
 }
 
@@ -262,8 +263,14 @@ IsraeliQueue IsraeliQueueMerge(IsraeliQueue* q, ComparisonFunction compare)
     }
     int maxLength = FindMaxLength(q), listSize = FindListSize(q);
     IsraeliList * runners = (IsraeliList *) malloc(sizeof(runners)*listSize + 1);
+    if(!MergeFriendship(q,merged))
+    {
+        IsraeliQueueDestroy(merged);
+        return NULL;
+    }
     if(!runners)
     {
+        IsraeliQueueDestroy(merged);
         return NULL;
     }
     for (int i = 0; i < listSize; i++)
@@ -290,11 +297,6 @@ IsraeliQueue IsraeliQueueMerge(IsraeliQueue* q, ComparisonFunction compare)
     }
     merged->m_frindshipThershold = GetAverage(q);
     merged->m_rivalry = GetGeomtricAverage(q);
-    if(!MergeFriendship(q,merged))
-    {
-        IsraeliQueueDestroy(merged);
-        return NULL;
-    }
     return merged;
 }
 
