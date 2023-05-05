@@ -551,35 +551,157 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
         hackerRunner = hackerRunner->m_next;
     }
     deleteEnrollmentSystem(copySys);
-    
-
+    EnrollmentSystem copySys = cloneEnrollmentSystem(sys);
+    hackersList hackerRunner = sys->m_hackers;
+    while(hackerRunner)
+    {
+        int numOfCoursesWanted = getListLength(hackerRunner->m_courseList);
+        int numOfCoursesGot = 0;
+        courseList courseRunner = hackerRunner->m_courseList;
+        while(courseRunner)
+        {
+            int counter = 0;
+            courseList courseWanted = findCourse(sys->m_courseList, courseRunner->m_id);
+            studentList temp = IsraeliQueueDequeue(courseWanted->m_israeliQueue);
+            while(!compareFunction(hackerRunner->m_hacker, temp) && IsraeliQueueSize(courseWanted->m_israeliQueue) > 0)
+            {
+                free(temp);
+                temp = IsraeliQueueDequeue(courseWanted->m_israeliQueue);
+                counter++;
+            }
+            if(!temp)
+            {
+                free(temp);
+            }
+            if(counter < courseWanted->m_maxStudents)
+            {
+                numOfCoursesGot++;
+            }
+        }
+        if(numOfCoursesWanted ==1)
+        {
+            if(numOfCoursesGot < 1)
+            {
+                fputs("Cannot satisfy constraints for ", out);
+                fputs(hackerRunner->m_id, out);
+                deleteEnrollmentSystem(copySys);
+                return;
+            }
+        }
+        else if(numOfCoursesWanted > 1)
+        {
+            if(numOfCoursesGot < 2)
+            {
+                fputs("Cannot satisfy constraints for ", out);
+                fputs(hackerRunner->m_id, out);
+                deleteEnrollmentSystem(copySys);
+                return;
+            }
+        }
+    }
+    printOutput(out,copySys);
+    deleteEnrollmentSystem(copySys);
 }
 
-int nameDistance(char* name1, char* name2) // might need to get a set as in a hacker and a student or two students
+void printOutput(FILE* out, EnrollmentSystem sys)
 {
-    int ascii_value1 = 0;
-    int ascii_value2 = 0;
+    courseList courseRunner = sys->m_courseList;
+    
+    while(courseRunner)
+    {
+        int counter = 0;
+        fputs(courseRunner->m_id,out);
+        while(IsraeliQueueSize(courseRunner->m_israeliQueue) > 0 && counter < courseRunner->m_maxStudents)
+        {
+            studentList student = IsraeliQueueDequeue(courseRunner->m_israeliQueue);
+            fputs(" ",out);
+            fputs(student->m_id, out);
+            free(student);
+        }
+        fputs("\n",out);
+        courseRunner = courseRunner->m_next;
+    }
+}
+
+char upperToLowercase(char ch)
+{
+    if(ch >= FIRST_CAPS_LETTER && ch <= LAST_CAPS_LETTER)
+    {
+        ch = ch + ADD_TO_CAPS_FOR_SMALL;
+    }
+    return ch;
+}
+
+
+int nameDistancei(hackersList hacker, studentList student)
+{
+    return stringDistancei(hacker->m_hacker->m_name[i], student->m_name[i]);
+}
+int nameDistancei(hackersList hacker, studentList student)
+{
+    return stringDistance(hacker->m_hacker->m_name[i], student->m_name[i]);
+}
+
+
+int stringDistance(char* name1, char* name2) //A != a
+{
+    int sum = 0;
     int i = 0;
 
-    while (name1[i])
+    while (name1[i] || name2[i])
     {
-        ascii_value1 = ascii_value1 + name1[i];
+        if(!name1[i])
+        {
+            sum = sum + upperToLowercase(name2[i]);
+        }
+        else if(!name2[i])
+        {
+            sum = sum + upperToLowercase(name1[i]);
+        }
+        else
+        {
+            sum = sum + abs(name1[i] - name2[i])
+        }
+
         i++;
     }
 
-    i = 0;
-    while (name2[i])
-    {
-        ascii_value2 = ascii_value2 + name2[i];
-        i++;
-    }
-
-    return abs(ascii_value1 - ascii_value2);
+    return sum;
 }
 
-int isInFriendList (hackers hacker, studentList student)
+int stringDistancei(hackersList hacker, studentList student) //A == a
 {
+    int sum = 0;
+    int i = 0;
 
+    while (hacker->m_hacker->m_name[i] || student->m_name[i])
+    {
+        if(!name1[i])
+        {
+            sum = sum + upperToLowercase(name2[i]);
+        }
+        else if(!name2[i])
+        {
+            sum = sum + upperToLowercase(name1[i]);
+        }
+        else
+        {
+            sum = sum + abs(upperToLowercase(name1[i]) - upperToLowercase(name2[i]))
+        }
+
+        i++;
+    }
+
+    return sum;
+}
+
+int isInFriendList (hackersList hacker, studentList student)
+{
+    if(!findStudent(hacker->m_friendList, student->m_id))
+    {
+        return false;
+    }
+    return true;
 }
 
 int idDifference(int Id1, int Id2)
@@ -587,13 +709,53 @@ int idDifference(int Id1, int Id2)
     return abs(Id1 - Id2);
 }
 
-bool compareFunction (studentList student1, studentList student2)
+bool compareStudents (studentList student1, studentList student2)
 {
-    //TODO compareFunction
-    if(value1 == value2)
+    if(student1->m_id != student2->m_id)
     {
-        return true;
+        return false;
+    }
+    if(student1->m_totalCredit != student2->m_totalCredit)
+    {
+        return false;
+    }
+    if(student1->m_gpa != student2->m_gpa)
+    {
+        return false;
+    }
+    if(strcmp(student1->m_name, student2->m_name) != 0)
+    {
+        return false;
+    }
+    if(strcmp(student1->m_surname, student2->m_surname) != 0)
+    {
+        return false;
+    }
+    if(strcmp(student1->m_city, student2->m_city) != 0) //TODO delete if needed
+    {
+        return false;
+    }
+    if(strcmp(student1->m_department, student2->m_department) != 0) //TODO delete if needed
+    {
+        return false;
     }
 
-    return false;
+    return true;
+}
+
+void ifLowerCaseNeeded(EnrollmentSystem sys, bool ifCaseSensitive)
+{
+    courseList runner = sys->m_courseList;
+    while(runner)
+    {
+        if(ifCaseSensitive)
+        {
+            IsraeliQueueError errorQueue= IsraeliQueueAddFriendshipMeasure(runner->m_israeliQueue, &nameDistancei);
+        }
+        else
+        {
+            IsraeliQueueError errorQueue = IsraeliQueueAddFriendshipMeasure(runner->m_israeliQueue, &nameDistance);
+        }
+        runner = runner->m_next;
+    }
 }

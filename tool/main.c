@@ -1,7 +1,5 @@
-//
-// Created by user on 03/05/2023.
-//
 #include "HackEnrollment.h"
+#include <stdbool.h>
 
 #define OPTION_1_FOR_INPUTS 5
 #define OPTION_2_FOR_INPUTS 6
@@ -19,6 +17,14 @@
  * argv[5] - queues
  * argv[6] - target
  */
+void closeAllFiles(FILE* file1, FILE* file2, FILE* file3, FILE* file4, FILE* file5)
+{
+    fclose(file1);
+    fclose(file2);
+    fclose(file3);
+    fclose(file4);
+    fclose(file5);
+}
 
 int main(int argc, char** argv)
 {
@@ -26,24 +32,24 @@ int main(int argc, char** argv)
     {
         return 0;
     }
-    int if_change_letters = 0;
+    int ifCaseSensitive = 0;
     if(argv[1] == "-i")
     {
-        if_change_letters = 1;
+        ifChangeLetters = 1;
     }
-    FILE* studentsFile = fopen(argv[STUDENTS_INDEX + if_change_letters], "r");
+    FILE* studentsFile = fopen(argv[STUDENTS_INDEX + ifCaseSensitive], "r");
     if (!studentsFile)
     {
         return 0;
     }
 
-    FILE* coursesFile = fopen(argv[COURSES_INDEX + if_change_letters], "r");
+    FILE* coursesFile = fopen(argv[COURSES_INDEX + ifCaseSensitive], "r");
     if (!coursesFile)
     {
         fclose(studentsFile);
         return 0;
     }
-    FILE* hackersFile = fopen(argv[HACKERS_INDEX + if_change_letters], "r");
+    FILE* hackersFile = fopen(argv[HACKERS_INDEX + ifCaseSensitive], "r");
     if (!hackersFile)
     {
         fclose(studentsFile);
@@ -51,7 +57,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    FILE* queuesFile = fopen(argv[QUEUES_INDEX + if_change_letters], "r");
+    FILE* queuesFile = fopen(argv[QUEUES_INDEX + ifCaseSensitive], "r");
     if (!queuesFile)
     {
         fclose(studentsFile);
@@ -60,7 +66,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    FILE* target = fopen(argv[TARGET_INDEX + if_change_letters], "w");
+    FILE* target = fopen(argv[TARGET_INDEX + ifCaseSensitive], "w");
     if (!target)
     {
         fclose(studentsFile);
@@ -69,17 +75,25 @@ int main(int argc, char** argv)
         fclose(queuesFile);
         return 0;
     }
+;
     EnrollmentSystem sys = createEnrollment(studentsFile, coursesFile, hackersFile);
-    EnrollmentSystem newSys = readEnrollment(sys, queuesFile);
+    if(!sys)
+    {
+        closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
+        return 0;
+    }
 
-    functionThatDoShit();
+    EnrollmentSystem newSys = readEnrollment(sys, queuesFile);
+    if(!newSys)
+    {
+        closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
+        return 0;
+    }
+
+    ifLowerCaseNeeded((bool) ifCaseSensitive);
 
     hackEnrollment(newSys, target);
 
-    fclose(studentsFile);
-    fclose(coursesFile);
-    fclose(hackersFile);
-    fclose(queuesFile);
-    fclose(target);
+    closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
     return 1;
 }
