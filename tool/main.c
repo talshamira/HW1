@@ -1,9 +1,11 @@
 #include "HackEnrollment.h"
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define OPTION_1_FOR_INPUTS 5
 #define OPTION_2_FOR_INPUTS 6
-
+#define LENGTH_OF_FLAG 2
 #define STUDENTS_INDEX 1
 #define COURSES_INDEX 2
 #define HACKERS_INDEX 3
@@ -33,9 +35,12 @@ int main(int argc, char** argv)
         return 0;
     }
     int ifCaseSensitive = 0;
-    if(argv[1] == "-i")
+    if(strlen(argv[1]) == LENGTH_OF_FLAG)
     {
-        ifChangeLetters = 1;
+        if(argv[1][0] == '-' && argv[1][1] == 'i')
+        {
+            ifCaseSensitive = 1;
+        }
     }
     FILE* studentsFile = fopen(argv[STUDENTS_INDEX + ifCaseSensitive], "r");
     if (!studentsFile)
@@ -86,14 +91,21 @@ int main(int argc, char** argv)
     EnrollmentSystem newSys = readEnrollment(sys, queuesFile);
     if(!newSys)
     {
+        deleteEnrollmentSystem(sys);
         closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
         return 0;
     }
 
-    ifLowerCaseNeeded((bool) ifCaseSensitive);
+    if(ifLowerCaseNeeded(newSys, ifCaseSensitive) != ISRAELIQUEUE_SUCCESS)
+    {
+        deleteEnrollmentSystem(newSys);
+        closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
+        return 0;
+    }
 
     hackEnrollment(newSys, target);
 
     closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
     return 1;
 }
+

@@ -1,9 +1,13 @@
 #include "IsraeliQueue.h"
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 #define NUM_OF_FRIENDS 5
 #define NUM_OF_RIVALS 3
  
+
+
+
 typedef struct FriendshipList {
     FriendshipFunction m_function;
     struct FriendshipList* m_next;
@@ -42,7 +46,7 @@ typedef struct IsraeliList {
     
 } *IsraeliList;
 
-IsraeliList createIsraeliListNode(const void* item)
+IsraeliList createIsraeliListNode(void* item)
 {
     IsraeliList list = malloc (sizeof(*list));
     if(!list)
@@ -78,6 +82,15 @@ struct IsraeliQueue_t
     ComparisonFunction m_compare;
 };
 
+IsraeliList findPlaceToEnter (IsraeliQueue q, void * item);
+int FindMaxLength(const IsraeliQueue* q);
+IsraeliQueueError insertNode (IsraeliList node,IsraeliQueue q, void * item);
+int FindListSize(const IsraeliQueue* q);
+bool MergeFriendship (const IsraeliQueue* q, const IsraeliQueue merged);
+int getAverage(IsraeliQueue* q);
+int getGeomtricAverage(const IsraeliQueue* q);
+IsraeliQueueError IsraeliQueueReenter (IsraeliQueue q, IsraeliList node);
+
 bool copyFriendshipFunctions(FriendshipFunction * frindship, FriendshipList listHead)
 {
     int counter = 0;
@@ -104,7 +117,7 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction * frindship, ComparisonFuncti
                                                                 int friendshipThershold, int rivalryThershold)
 {
     IsraeliQueue israeliLine = malloc (sizeof(israeliLine));
-    if(!&israeliLine)
+    if(!israeliLine)
     {
         return NULL;
     }
@@ -136,7 +149,7 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
     return insertNode(placeHolder, q, item);    
 }
 
-IsraeliQueueError insertNode (IsraeliList node,IsraeliQueue q, const void * item)
+IsraeliQueueError insertNode (IsraeliList node,IsraeliQueue q, void * item)
 {
     IsraeliList next= createIsraeliListNode(item);
     if(!next)
@@ -151,7 +164,7 @@ IsraeliQueueError insertNode (IsraeliList node,IsraeliQueue q, const void * item
     return ISRAELIQUEUE_SUCCESS;
 }
 
-bool isFriend(const IsraeliList node, const void * item, const IsraeliQueue q)
+bool isFriend(IsraeliList node, void * item, IsraeliQueue q)
 {
     if(node->m_friends > NUM_OF_FRIENDS)
     {
@@ -169,7 +182,7 @@ bool isFriend(const IsraeliList node, const void * item, const IsraeliQueue q)
     return false;
 }
 
-bool isRival(const IsraeliList node, const void * item, const IsraeliQueue q)
+bool isRival(IsraeliList node, void * item,  IsraeliQueue q)
 {
     if(node->m_rivals > NUM_OF_RIVALS)
     {
@@ -252,7 +265,7 @@ void* IsraeliQueueDequeue(IsraeliQueue q)
 
 IsraeliQueue IsraeliQueueMerge(IsraeliQueue* q, ComparisonFunction compare)
 {
-    if(!q, !compare)
+    if(!q && !compare)
     {
         return NULL;
     }
@@ -295,8 +308,8 @@ IsraeliQueue IsraeliQueueMerge(IsraeliQueue* q, ComparisonFunction compare)
             runners[j] = runners[j]->m_Right;
         }
     }
-    merged->m_frindshipThershold = GetAverage(q);
-    merged->m_rivalry = GetGeomtricAverage(q);
+    merged->m_frindshipThershold = getAverage(q);
+    merged->m_rivalry = getGeomtricAverage(q);
     return merged;
 }
 
@@ -373,7 +386,7 @@ int getAverage(IsraeliQueue* q)
     return (int) ceil((double) average/ (double) counter);
 }
 
-int GetGeomtricAverage(const IsraeliQueue* q)
+int getGeomtricAverage(const IsraeliQueue* q)
 {
     int average = 1, counter = 0;
     while(q[counter])
