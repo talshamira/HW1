@@ -4,14 +4,14 @@
  * and for every course there is an IsraeliQueue for the students :(
  */
 
-typedef struct courseList {
+struct courseList {
     int m_id;
     int m_maxStudents;
     IsraeliQueue m_israeliQueue;
     struct courseList* m_next;
-} *courseList;
+};
 
-typedef struct studentList {
+struct studentList {
     int m_id; //9 digits
     int m_totalCredit; //int >0
     int m_gpa; //between 0-100
@@ -19,24 +19,48 @@ typedef struct studentList {
     char* m_surname;
     char* m_city; // might delete
     char* m_department; 
-    bool m_isHacker;
+    hackersList m_isHacker;
     struct studentList* m_next;
-} *studentList;
+};
 
-typedef struct hackersList {
+struct hackersList {
     int m_id;
     studentList m_hacker;
     studentList m_friendList;
     studentList m_rivalList;
     courseList m_courseList;
     struct hackersList* m_next;
-}*hackersList;
+};
 
-typedef struct EnrollmentSystem {
+struct EnrollmentSystem {
     studentList m_studentList;
     courseList m_courseList;
     hackersList m_hackers;
-} *EnrollmentSystem;
+};
+
+
+
+
+studentList findStudent(studentList students, int id);
+char* getNextString(FILE* file);
+int getNextInt(char* line);
+bool studentCopy(studentList oldStudent, studentList newStudent);
+bool courseCopy (courseList oldCourse, courseList newCourse);
+hackersList cloneHackerList(hackersList hacker);
+courseList cloneCourseList (courseList course);
+int idDifference(void* student1, void* student2);
+int isInFriendList (void* hacker, void* student); 
+courseList findCourse(courseList courses, int id);
+int compareStudents (void* student1, void* student2);
+void printOutput(FILE* out, EnrollmentSystem sys);
+int stringDistancei(char* name1, char* name2);
+int stringDistance(char* name1, char* name2); 
+int nameDistancei(void* hacker, void* student);
+int nameDistance(void* hacker, void* student);
+int getListLength(courseList course);
+void deleteEnrollmentSystem(EnrollmentSystem sys);
+
+
 
 
 courseList createCourseList(int id, int maxStudents)
@@ -76,7 +100,7 @@ studentList createStudentList(int id, int totalCredits, int gpa, char* name,char
     list->m_surname = surname;
     list->m_city = city;
     list->m_department = department;
-    list->m_isHacker = false;
+    list->m_isHacker = NULL;
     list->m_next = NULL;
     return list;
 }
@@ -154,15 +178,24 @@ studentList findStudent(studentList students, int id)
     return runner;
 }
 
-
+void deleteEnrollmentSystem(EnrollmentSystem sys)
+{
+    if(!sys)
+    {
+        return;
+    }
+    destroyCourseList(sys->m_courseList);
+    destroyHackerList(sys->m_hackers);
+    destroyStudentList(sys->m_studentList);
+    free(sys);
+}
 EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
 {
-    EnrollmentSystem hackEnrollment = (EnrollmentSystem*) malloc(sizeof(*hackEnrollment));
+    EnrollmentSystem hackEnrollment = (EnrollmentSystem) malloc(sizeof(hackEnrollment));
     if(!hackEnrollment)
     {
         return NULL;
     }
-    FriendshipFunction friendships[NUM_OF_FUNCTIONS] = {&nameDistance, &isInFriendList, &idDifference};
     studentList studentRunner = hackEnrollment->m_studentList;
     courseList courseRunner = hackEnrollment->m_courseList;
     int gotToEOF = 0;
@@ -213,7 +246,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
         }
         studentRunner = studentRunner->m_next;
     }
-    while (inputs[0] != EOF);
+    while (*inputs[0] != EOF);
     
     char* input = NULL;
     hackersList hackerRunner = hackEnrollment->m_hackers;
@@ -309,18 +342,19 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             deleteEnrollmentSystem(hackEnrollment);
             return NULL;
         }
-        hackerRunner->m_hacker->m_isHacker = true;
+        hackerRunner->m_hacker->m_isHacker = hackerRunner;
         hackerRunner = hackerRunner->m_next;
-    }while (input != EOF);
+    }while (*input != EOF);
+    return hackEnrollment;
 }
 
  int getNextInt(char* line)
 {
     int id = 0;
-    while(line != SEPERATOR && line != END_OF_LINE)
+    while(*line != SEPERATOR && *line != END_OF_LINE)
     {
         id *=  10;
-        int temp = (int) line;
+        int temp = (int) *line;
         id += temp;
         line++;
     }
@@ -338,7 +372,7 @@ char* getNextString(FILE* file)
         {
             return NULL;
         }
-        tempLength = strLength(buffer);
+        tempLength = strlen(buffer);
         input = (char *) malloc(sizeof(input)*tempLength+1);
         strcpy(input+inputLength, buffer);
         inputLength += tempLength;
@@ -352,7 +386,7 @@ EnrollmentSystem cloneEnrollmentSystem(EnrollmentSystem sys)
     {
         return NULL;
     }
-    EnrollmentSystem copy = (EnrollmentSystem*) malloc(sizeof(copy));
+    EnrollmentSystem copy = (EnrollmentSystem) malloc(sizeof(copy));
     if(!copy)
     {
         return NULL;
@@ -375,6 +409,7 @@ EnrollmentSystem cloneEnrollmentSystem(EnrollmentSystem sys)
         hackersRunnerNew = hackersRunnerNew->m_next;
         hackersRunnerOld = hackersRunnerOld->m_next;
     }
+    return copy;
 }
 
 bool courseCopy (courseList oldCourse, courseList newCourse)
@@ -474,7 +509,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
         courseList course = findCourse(sysCopy->m_courseList, getNextInt(input));
         free(input);
         int length = 0;
-        course->m_israeliQueue = IsraeliQueueCreate(&functions, &compareFunction, FRIENDSHIP_BAR, RIVELRY_BAR);
+        course->m_israeliQueue = IsraeliQueueCreate(functions, &compareStudents, FRIENDSHIP_BAR, RIVELRY_BAR);
         if(!course->m_israeliQueue)
         {
             deleteEnrollmentSystem(sysCopy);
@@ -497,7 +532,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
                 return NULL;
             }
         } while (input[length -2] != END_OF_LINE);
-    } while (input != EOF);
+    } while (*input != EOF);
     deleteEnrollmentSystem(sys);
     return sysCopy;   
 }
@@ -522,7 +557,7 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
     EnrollmentSystem copySys = cloneEnrollmentSystem(sys);
     if(!copySys)
     {
-        return NULL;
+        return;
     }
     hackersList hackerRunner = sys->m_hackers;
     while(hackerRunner)
@@ -551,8 +586,8 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
         hackerRunner = hackerRunner->m_next;
     }
     deleteEnrollmentSystem(copySys);
-    EnrollmentSystem copySys = cloneEnrollmentSystem(sys);
-    hackersList hackerRunner = sys->m_hackers;
+    EnrollmentSystem copySystem = cloneEnrollmentSystem(sys);
+    hackerRunner = sys->m_hackers;
     while(hackerRunner)
     {
         int numOfCoursesWanted = getListLength(hackerRunner->m_courseList);
@@ -563,7 +598,7 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
             int counter = 0;
             courseList courseWanted = findCourse(sys->m_courseList, courseRunner->m_id);
             studentList temp = IsraeliQueueDequeue(courseWanted->m_israeliQueue);
-            while(!compareFunction(hackerRunner->m_hacker, temp) && IsraeliQueueSize(courseWanted->m_israeliQueue) > 0)
+            while(!compareStudents(hackerRunner->m_hacker, temp) && IsraeliQueueSize(courseWanted->m_israeliQueue) > 0)
             {
                 free(temp);
                 temp = IsraeliQueueDequeue(courseWanted->m_israeliQueue);
@@ -583,8 +618,8 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
             if(numOfCoursesGot < 1)
             {
                 fputs("Cannot satisfy constraints for ", out);
-                fputs(hackerRunner->m_id, out);
-                deleteEnrollmentSystem(copySys);
+                fprintf(out,"%d", hackerRunner->m_id);
+                deleteEnrollmentSystem(copySystem);
                 return;
             }
         }
@@ -593,8 +628,8 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
             if(numOfCoursesGot < 2)
             {
                 fputs("Cannot satisfy constraints for ", out);
-                fputs(hackerRunner->m_id, out);
-                deleteEnrollmentSystem(copySys);
+                fprintf(out,"%d", hackerRunner->m_id);
+                deleteEnrollmentSystem(copySystem);
                 return;
             }
         }
@@ -602,7 +637,17 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
     printOutput(out,copySys);
     deleteEnrollmentSystem(copySys);
 }
-
+int getListLength(courseList course)
+{
+    int counter = 0;
+    courseList runner = course;
+    while(runner)
+    {
+        counter++;
+        runner = runner->m_next;
+    }
+    return counter;
+}
 void printOutput(FILE* out, EnrollmentSystem sys)
 {
     courseList courseRunner = sys->m_courseList;
@@ -610,12 +655,12 @@ void printOutput(FILE* out, EnrollmentSystem sys)
     while(courseRunner)
     {
         int counter = 0;
-        fputs(courseRunner->m_id,out);
+        fprintf(out,"%d", courseRunner->m_id);
         while(IsraeliQueueSize(courseRunner->m_israeliQueue) > 0 && counter < courseRunner->m_maxStudents)
         {
             studentList student = IsraeliQueueDequeue(courseRunner->m_israeliQueue);
             fputs(" ",out);
-            fputs(student->m_id, out);
+            fprintf(out,"%d", student->m_id);
             free(student);
         }
         fputs("\n",out);
@@ -632,16 +677,21 @@ char upperToLowercase(char ch)
     return ch;
 }
 
-
-int nameDistancei(hackersList hacker, studentList student)
+// might need to get a set as in a hacker and a student or two students
+int nameDistancei(void* hacker, void* student)
 {
-    return stringDistancei(hacker->m_hacker->m_name[i], student->m_name[i]);
+    studentList student1 = hacker, student2 = student;
+    int distance = stringDistancei(student1->m_city, student2->m_name);
+    distance += stringDistancei(student1->m_surname, student2->m_surname);
+    return distance;
 }
-int nameDistancei(hackersList hacker, studentList student)
+int nameDistance(void* hacker, void* student)
 {
-    return stringDistance(hacker->m_hacker->m_name[i], student->m_name[i]);
+    studentList student1 = hacker, student2 = student;
+    int distance = stringDistance(student1->m_city, student2->m_name);
+    distance += stringDistance(student1->m_surname, student2->m_surname);
+    return distance;
 }
-
 
 int stringDistance(char* name1, char* name2) //A != a
 {
@@ -660,7 +710,7 @@ int stringDistance(char* name1, char* name2) //A != a
         }
         else
         {
-            sum = sum + abs(name1[i] - name2[i])
+            sum = sum + abs(name1[i] - name2[i]);
         }
 
         i++;
@@ -669,12 +719,12 @@ int stringDistance(char* name1, char* name2) //A != a
     return sum;
 }
 
-int stringDistancei(hackersList hacker, studentList student) //A == a
+int stringDistancei(char* name1, char* name2) //A == a
 {
     int sum = 0;
     int i = 0;
 
-    while (hacker->m_hacker->m_name[i] || student->m_name[i])
+    while (name1[i] || name2[i])
     {
         if(!name1[i])
         {
@@ -686,7 +736,7 @@ int stringDistancei(hackersList hacker, studentList student) //A == a
         }
         else
         {
-            sum = sum + abs(upperToLowercase(name1[i]) - upperToLowercase(name2[i]))
+            sum = sum + abs(upperToLowercase(name1[i]) - upperToLowercase(name2[i]));
         }
 
         i++;
@@ -695,55 +745,62 @@ int stringDistancei(hackersList hacker, studentList student) //A == a
     return sum;
 }
 
-int isInFriendList (hackersList hacker, studentList student)
+int isInFriendList (void* hacker, void* student)
 {
-    if(!findStudent(hacker->m_friendList, student->m_id))
+    studentList student1 = hacker, student2 = student;
+    if(!student1->m_isHacker)
+    {
+        return 0;
+    }
+    if(!findStudent(student1->m_isHacker->m_friendList, student2->m_id))
+    {
+        return 0;
+    }
+    return FRIENDSHIP_BAR;
+}
+
+int idDifference(void* student1, void* student2)
+{
+    studentList firstStudent = student1, secondStudent = student2;
+    return abs(firstStudent->m_id - secondStudent->m_id);
+}
+
+int compareStudents (void* student1, void* student2)
+{
+    studentList firstStudent = student1, secondStudent = student2;
+    if(firstStudent->m_id != secondStudent->m_id)
     {
         return false;
     }
+    if(firstStudent->m_totalCredit != secondStudent->m_totalCredit)
+    {
+        return false;
+    }
+    if(firstStudent->m_gpa != secondStudent->m_gpa)
+    {
+        return false;
+    }
+    if(strcmp(firstStudent->m_name, secondStudent->m_name) != 0)
+    {
+        return false;
+    }
+    if(strcmp(firstStudent->m_surname, secondStudent->m_surname) != 0)
+    {
+        return false;
+    }
+    if(strcmp(firstStudent->m_city, secondStudent->m_city) != 0) //TODO delete if needed
+    {
+        return false;
+    }
+    if(strcmp(firstStudent->m_department, secondStudent->m_department) != 0) //TODO delete if needed
+    {
+        return false;
+    }
+
     return true;
 }
 
-int idDifference(int Id1, int Id2)
-{
-    return abs(Id1 - Id2);
-}
-
-bool compareStudents (studentList student1, studentList student2)
-{
-    if(student1->m_id != student2->m_id)
-    {
-        return false;
-    }
-    if(student1->m_totalCredit != student2->m_totalCredit)
-    {
-        return false;
-    }
-    if(student1->m_gpa != student2->m_gpa)
-    {
-        return false;
-    }
-    if(strcmp(student1->m_name, student2->m_name) != 0)
-    {
-        return false;
-    }
-    if(strcmp(student1->m_surname, student2->m_surname) != 0)
-    {
-        return false;
-    }
-    if(strcmp(student1->m_city, student2->m_city) != 0) //TODO delete if needed
-    {
-        return false;
-    }
-    if(strcmp(student1->m_department, student2->m_department) != 0) //TODO delete if needed
-    {
-        return false;
-    }
-
-    return true;
-}
-
-void ifLowerCaseNeeded(EnrollmentSystem sys, bool ifCaseSensitive)
+IsraeliQueueError ifLowerCaseNeeded(EnrollmentSystem sys, bool ifCaseSensitive)
 {
     courseList runner = sys->m_courseList;
     while(runner)
@@ -751,11 +808,21 @@ void ifLowerCaseNeeded(EnrollmentSystem sys, bool ifCaseSensitive)
         if(ifCaseSensitive)
         {
             IsraeliQueueError errorQueue= IsraeliQueueAddFriendshipMeasure(runner->m_israeliQueue, &nameDistancei);
+            if(errorQueue != ISRAELIQUEUE_SUCCESS)
+            {
+                return errorQueue;
+            }
+
         }
         else
         {
             IsraeliQueueError errorQueue = IsraeliQueueAddFriendshipMeasure(runner->m_israeliQueue, &nameDistance);
+            if(errorQueue != ISRAELIQUEUE_SUCCESS)
+            {
+                return errorQueue;
+            }
         }
         runner = runner->m_next;
     }
+    return ISRAELIQUEUE_SUCCESS;
 }

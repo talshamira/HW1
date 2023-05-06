@@ -1,7 +1,9 @@
+#ifndef HACKENROLMENT_H_
+#define HACKENROLMENT_H_
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <string.h>
 #include "IsraeliQueue.h"
 
 #define FRIENDSHIP_BAR 20
@@ -28,6 +30,9 @@
 
 
 typedef struct EnrollmentSystem * EnrollmentSystem;
+typedef struct hackersList * hackersList;
+typedef struct studentList * studentList;
+typedef struct courseList * courseList;
 
 /**Creates EnrollmentSystem with info of the students and the courses
  * .*/
@@ -36,3 +41,6 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers);
 EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues);
 
 void hackEnrollment(EnrollmentSystem sys, FILE* out);
+IsraeliQueueError ifLowerCaseNeeded(EnrollmentSystem sys, bool ifCaseSensitive);
+void deleteEnrollmentSystem(EnrollmentSystem sys);
+#endif
