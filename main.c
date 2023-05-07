@@ -95,16 +95,15 @@ int main(int argc, char** argv)
         closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
         return 0;
     }
-
     if(ifLowerCaseNeeded(newSys, ifCaseSensitive) != ISRAELIQUEUE_SUCCESS)
     {
         deleteEnrollmentSystem(newSys);
         closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
         return 0;
     }
-
+    printf("trying hack enrollment\n");
     hackEnrollment(newSys, target);
-
+    printf("hack Enrollment\n");
     closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
     return 1;
 }

@@ -43,4 +43,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues);
 void hackEnrollment(EnrollmentSystem sys, FILE* out);
 IsraeliQueueError ifLowerCaseNeeded(EnrollmentSystem sys, bool ifCaseSensitive);
 void deleteEnrollmentSystem(EnrollmentSystem sys);
+
+
+void printEnrollmentSystem(EnrollmentSystem sys);
 #endif

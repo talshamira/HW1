@@ -1,0 +1,20 @@
+[
+{
+  "directory": "C:/Users/talsh/Semester3Worksapce/HW1/build",
+  "command": "C:\\TDMGCC64\\bin\\gcc.exe   -std=c99 -I/home/tal.shamir/ex1 -Itool --pedantic-errors -Wall -Werror -g -o CMakeFiles\\my_executable.dir\\HackEnrollment.c.obj -c C:\\Users\\talsh\\Semester3Worksapce\\HW1\\HackEnrollment.c",
+  "file": "C:/Users/talsh/Semester3Worksapce/HW1/HackEnrollment.c",
+  "output": "CMakeFiles/my_executable.dir/HackEnrollment.c.obj"
+},
+{
+  "directory": "C:/Users/talsh/Semester3Worksapce/HW1/build",
+  "command": "C:\\TDMGCC64\\bin\\gcc.exe   -std=c99 -I/home/tal.shamir/ex1 -Itool --pedantic-errors -Wall -Werror -g -o CMakeFiles\\my_executable.dir\\IsraeliQueue.c.obj -c C:\\Users\\talsh\\Semester3Worksapce\\HW1\\IsraeliQueue.c",
+  "file": "C:/Users/talsh/Semester3Worksapce/HW1/IsraeliQueue.c",
+  "output": "CMakeFiles/my_executable.dir/IsraeliQueue.c.obj"
+},
+{
+  "directory": "C:/Users/talsh/Semester3Worksapce/HW1/build",
+  "command": "C:\\TDMGCC64\\bin\\gcc.exe   -std=c99 -I/home/tal.shamir/ex1 -Itool --pedantic-errors -Wall -Werror -g -o CMakeFiles\\my_executable.dir\\main.c.obj -c C:\\Users\\talsh\\Semester3Worksapce\\HW1\\main.c",
+  "file": "C:/Users/talsh/Semester3Worksapce/HW1/main.c",
+  "output": "CMakeFiles/my_executable.dir/main.c.obj"
+}
+]
