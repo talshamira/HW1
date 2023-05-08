@@ -16,10 +16,6 @@ typedef struct FriendshipList {
 
 FriendshipList createFriendshipListNode(const FriendshipFunction function)
 {
-    if(!function)
-    {
-        printf("null function\n");
-    }
     FriendshipList list = malloc (sizeof(*list));
     if(!list)
     {
@@ -27,7 +23,6 @@ FriendshipList createFriendshipListNode(const FriendshipFunction function)
     }
     list->m_function = function;
     list->m_next = NULL;
-    printf("succeded in making a node\n");
     return list;
 }
 
@@ -89,38 +84,34 @@ struct IsraeliQueue_t
 
 IsraeliList findPlaceToEnter (IsraeliQueue q, void * item);
 int FindMaxLength(const IsraeliQueue* q);
-IsraeliQueueError insertNode (IsraeliList node,IsraeliQueue q, void * item);
 int FindListSize(const IsraeliQueue* q);
 bool MergeFriendship (const IsraeliQueue* q, const IsraeliQueue merged);
 int getAverage(IsraeliQueue* q);
 int getGeomtricAverage(const IsraeliQueue* q);
 IsraeliQueueError IsraeliQueueReenter (IsraeliQueue q, IsraeliList node);
 
-bool copyFriendshipFunctions(FriendshipFunction * frindship, FriendshipList listHead)
+/*bool copyFriendshipFunctions(FriendshipFunction * frindship, FriendshipList listHead)
 {
-    if(!frindship || !frindship[0])
-    {
-        return true;
-    }
-    int sizeOfTotalBytes = sizeof(frindship), sizeOfFirstPointer = sizeof(frindship[0]);
-    int sizeOfArray = sizeOfTotalBytes/sizeOfFirstPointer;
     listHead = createFriendshipListNode(frindship[0]); 
     if(!listHead)
     {
         return false;
     }
-    FriendshipList runner = listHead;
-    for(int i = 0; i < sizeOfArray; i++)
+    FriendshipList first = listHead;
+    int counter = 1;
+    while(frindship[counter])
     {
-        runner->m_next = createFriendshipListNode(frindship[i]); 
-        if(!runner->m_next)
+        listHead->m_next = createFriendshipListNode(frindship[counter]); 
+        if(!listHead->m_next)
         {
             return false;
         }
-        runner = runner->m_next;
+        listHead = listHead->m_next;
+        counter++;
     }
+    listHead = first;
     return true;
-}
+}*/
 
 IsraeliQueue IsraeliQueueCreate(FriendshipFunction * frindship, ComparisonFunction compare, 
                                                                 int friendshipThershold, int rivalryThershold)
@@ -132,17 +123,34 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction * frindship, ComparisonFuncti
     }
     israeliLine->m_rivalry=rivalryThershold;
     israeliLine->m_frindshipThershold = friendshipThershold;
-    israeliLine->m_listHead = createIsraeliListNode(NULL); 
-    if(!israeliLine->m_listHead)
+    israeliLine->m_listHead = NULL; 
+    FriendshipList first =NULL;
+    int counter = 0;
+    while(frindship[counter])
     {
-        IsraeliQueueDestroy(israeliLine);
-        return NULL;
+        if(!first)
+        {
+            israeliLine->m_listFrindshipHead = createFriendshipListNode(frindship[counter]);
+            if(!israeliLine->m_listFrindshipHead)
+            {
+                IsraeliQueueDestroy(israeliLine);
+                return NULL;
+            }
+            first = israeliLine->m_listFrindshipHead;
+        }
+        else
+        {
+            israeliLine->m_listFrindshipHead->m_next = createFriendshipListNode(frindship[counter]);
+            if(!israeliLine->m_listFrindshipHead->m_next)
+            {
+                IsraeliQueueDestroy(israeliLine);
+                return NULL;
+            }
+            israeliLine->m_listFrindshipHead = israeliLine->m_listFrindshipHead->m_next;
+        }
+        counter++;
     }
-    if(!copyFriendshipFunctions(frindship, israeliLine->m_listFrindshipHead))
-    {
-        IsraeliQueueDestroy(israeliLine);
-        return NULL; 
-    }
+    israeliLine->m_listFrindshipHead = first;
     israeliLine->m_size = 0;
     israeliLine->m_compare = compare;
     return israeliLine;
@@ -150,29 +158,35 @@ IsraeliQueue IsraeliQueueCreate(FriendshipFunction * frindship, ComparisonFuncti
 
 IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
 {
-    if(!item)
+    if(!item || !q || !q->m_compare)
     {
         return ISRAELIQUEUE_BAD_PARAM;
     }
     IsraeliList placeHolder = findPlaceToEnter(q, item);
     if(!placeHolder)
     {
-        return ISRAELIQUEUE_BAD_PARAM;
+        q->m_listHead = createIsraeliListNode(item);
+        if(!q->m_listHead)
+        {
+            return ISRAELIQUEUE_ALLOC_FAILED;
+        }
+        q->m_size++;
+        return ISRAELIQUEUE_SUCCESS;
     }
-    return insertNode(placeHolder, q, item);    
-}
-
-IsraeliQueueError insertNode (IsraeliList node,IsraeliQueue q, void * item)
-{
     IsraeliList next= createIsraeliListNode(item);
     if(!next)
     {
         return ISRAELIQUEUE_ALLOC_FAILED;
     }
-    IsraeliList temp = node->m_Right;
-    node->m_Right = next;
+    IsraeliList temp = placeHolder->m_Right;
+    placeHolder->m_Right = next;
     next->m_Right = temp;
-    node->m_friends++;
+    next->m_Left = placeHolder;
+    if(next->m_Right)
+    {
+        next->m_Right->m_Left = next;
+    }
+    placeHolder->m_friends++;
     q->m_size++;
     return ISRAELIQUEUE_SUCCESS;
 }
@@ -223,7 +237,7 @@ IsraeliQueueError IsraeliQueueAddFriendshipMeasure(IsraeliQueue q, FriendshipFun
         return ISRAELIQUEUE_BAD_PARAM;
     }
     FriendshipList runner = q->m_listFrindshipHead;
-    while(runner->m_next)
+    while(runner && runner->m_next)
     {
         runner = runner->m_next;
     }
@@ -274,14 +288,21 @@ bool IsraeliQueueContains(IsraeliQueue q, void * item)
 
 void* IsraeliQueueDequeue(IsraeliQueue q)
 {
-    if(!q || !q->m_listHead)
+    if(!q || !q->m_size)
     {
         return NULL;
     }
     IsraeliList head = q->m_listHead;
     q->m_listHead = q->m_listHead->m_Right;
+    head->m_Right =NULL;
+    head->m_Left =NULL;
     q->m_size--;
+    if(q->m_size > 1)
+    {
+         q->m_listHead->m_Left =NULL;
+    }
     return head;
+    
 }
 
 IsraeliQueue IsraeliQueueMerge(IsraeliQueue* q, ComparisonFunction compare)
@@ -340,13 +361,11 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
     {
         return NULL;
     }
-    printf("given queue not null \n");
     IsraeliQueue newQueue = (IsraeliQueue) malloc(sizeof(newQueue));
     if(!newQueue)
     {
         return NULL;
     }
-    printf("malloc succeded\n");
     IsraeliList oldListRunner = q->m_listHead;
     IsraeliList firstNode = NULL;
     while(oldListRunner)
@@ -374,23 +393,14 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
         oldListRunner = oldListRunner->m_Right;
     }
     newQueue->m_listHead = firstNode;
-    printf("copied nodes\n");
     FriendshipList oldFriendshipRunner = q->m_listFrindshipHead;
     FriendshipList firstFriendship = NULL;
     if(oldFriendshipRunner)
     {
-        printf("old friendship list not null\n");
         while(oldFriendshipRunner)
         {
-            printf("started loop run\n");
             if(!firstFriendship)
             {
-                
-                if(!oldFriendshipRunner->m_function)
-                {
-                    printf("function null\n");
-                }
-                printf("trying to create new friendship list\n");
                 newQueue->m_listFrindshipHead = createFriendshipListNode(oldFriendshipRunner->m_function);
                 if(!newQueue->m_listFrindshipHead)
                 {
@@ -398,11 +408,9 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
                     return NULL;
                 }
                 firstFriendship =  newQueue->m_listFrindshipHead;
-                printf("created first friendship list\n");
             }
             else
             {
-                printf("trying to create new friendship list\n");
                 newQueue->m_listFrindshipHead->m_next = createFriendshipListNode(oldFriendshipRunner->m_function);
                 if(!newQueue->m_listFrindshipHead->m_next)
                 {
@@ -410,18 +418,11 @@ IsraeliQueue IsraeliQueueClone(IsraeliQueue q)
                     return NULL;
                 }
                 newQueue->m_listFrindshipHead = newQueue->m_listFrindshipHead->m_next;
-                printf("created first friendship list\n");
             }
             oldFriendshipRunner = oldFriendshipRunner->m_next;
-            if(oldFriendshipRunner)
-            {
-                printf("there is a node\n");
-            }
         }
         newQueue->m_listFrindshipHead = firstFriendship;
-        printf("finished loop run\n");
     }
-    printf("copied friendship lists\n");
     IsraeliQueueUpdateFriendshipThreshold(newQueue, q->m_frindshipThershold);
     IsraeliQueueUpdateRivalryThreshold(newQueue, q->m_rivalry);
     newQueue->m_size = IsraeliQueueSize(q);
