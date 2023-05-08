@@ -1003,58 +1003,24 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
         while(courseRunner)
         {
             int counter = 0;
-            printf("looking for course %d\n", courseRunner->m_id);
             courseList courseWanted = findCourse(sys->m_courseList, courseRunner->m_id);
-            printf("course found %d\n", courseWanted->m_id);
-            printf("queue size %d\n", IsraeliQueueSize(courseWanted->m_israeliQueue));
             studentList temp = IsraeliQueueDequeue(courseWanted->m_israeliQueue);
-            if(!temp)
-            {
-                printf("dequeue returned null\n");
-            }
-            else
-            {
-                printf("got student %d\n", temp->m_id);
-                
-            }
             while(temp && !compareStudents(hacker, temp) && IsraeliQueueSize(courseWanted->m_israeliQueue) >0)
             {
-                printf("in while\n");
-                free(temp);
-                printf("trying to dequeue\n");
                 temp = IsraeliQueueDequeue(courseWanted->m_israeliQueue);
-                 if(!temp)
-                {
-                    printf("dequeue returned null\n");
-                }
-                else
-                {
-                    printf("got student %d\n", temp->m_id);
-                
-                }
-                printf("got dequeue\n");
                 counter++;
             }
-            printf("got here\n");
-            if(temp)
-            {
-                printf("freeing temp\n");
-                free(temp);
-            }
+            
             if(counter < courseWanted->m_maxStudents)
             {
-                printf("adding to counter\n");
                 numOfCoursesGot++;
             }
             courseRunner = courseRunner->m_next;
         }
-        printf("got out of first loop\n");
         if(numOfCoursesWanted ==1)
         {
-            printf("wanted one course\n");
             if(numOfCoursesGot < 1)
             {
-                printf("trying fputs\n");
                 fputs("Cannot satisfy constraints for ", out);
                 fprintf(out,"%d", hackerRunner->m_id);
                 deleteEnrollmentSystem(copySystem);
@@ -1063,10 +1029,8 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
         }
         else if(numOfCoursesWanted > 1)
         {
-            printf("wanted more than 1\n");
             if(numOfCoursesGot < 2)
             {
-                printf("trying fputs\n");
                 fputs("Cannot satisfy constraints for ", out);
                 fprintf(out,"%d", hackerRunner->m_id);
                 deleteEnrollmentSystem(copySystem);
@@ -1075,7 +1039,6 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
         }
         hackerRunner = hackerRunner->m_next;
     }
-    printf("finished with all hackers\n");
     printOutput(out,copySys);
     deleteEnrollmentSystem(copySys);
 }
@@ -1092,36 +1055,24 @@ int getListLength(courseList course)
 }
 void printOutput(FILE* out, EnrollmentSystem sys)
 {
-    printf("printing output\n");
     courseList courseRunner = sys->m_courseList;
-    printEnrollmentSystem(sys);
     while(courseRunner)
     {
         int counter = 0;
-        printf("trying fprintf\n");
         fprintf(out,"%d", courseRunner->m_id);
         while(IsraeliQueueSize(courseRunner->m_israeliQueue) > 0 && counter < courseRunner->m_maxStudents)
         {
             studentList student = IsraeliQueueDequeue(courseRunner->m_israeliQueue);
             if(student)
             {
-                printf("printing student\n");
                 fputs(" ",out);
-                printf("printing %d\n", student->m_id);
-                if(!fprintf(out,"%d", student->m_id))
-                {
-                    printf("fail\n");
-                }
-                printf("trying to free student\n");
-                destroyStudentList(student);
+                fprintf(out,"%d", student->m_id);
             }
-            printf("got here\n");
         }
         fputs("\n",out);
-        printf("next course\n");
         courseRunner = courseRunner->m_next;
+
     }
-    printf("got here\n");
 }
 
 char upperToLowercase(char ch)

@@ -80,14 +80,12 @@ int main(int argc, char** argv)
         fclose(queuesFile);
         return 0;
     }
-    printf("trying createEnrollment\n");
     EnrollmentSystem sys = createEnrollment(studentsFile, coursesFile, hackersFile);
     if(!sys)
     {
         closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
         return 0;
     }
-    printf("trying readEnroolment\n");
     EnrollmentSystem newSys = readEnrollment(sys, queuesFile);
     if(!newSys)
     {
@@ -95,16 +93,13 @@ int main(int argc, char** argv)
         closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
         return 0;
     }
-    printf("trying to add i\n");
     if(ifLowerCaseNeeded(newSys, ifCaseSensitive) != ISRAELIQUEUE_SUCCESS)
     {
         deleteEnrollmentSystem(newSys);
         closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
         return 0;
     }
-    printf("trying hack enrollment\n");
     hackEnrollment(newSys, target);
-    printf("hack Enrollment\n");
     closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
     return 1;
 }

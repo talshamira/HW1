@@ -35,7 +35,6 @@ void destroyFrindshipList(FriendshipList listHead)
         free(toDelete);
     }
 }
-
 typedef struct IsraeliList {
     void* m_item;
     int m_friends;
@@ -166,7 +165,6 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
     
     if(!placeHolder)
     {
-        printf("place holder was null creating new node\n");
         q->m_listHead = createIsraeliListNode(item);
         if(!q->m_listHead)
         {
@@ -174,14 +172,6 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
         }
         q->m_size++;
         return ISRAELIQUEUE_SUCCESS;
-    }
-    if(placeHolder->m_Right)
-    {
-        printf("not last\n");
-    }
-    else
-    {
-        printf("place holder is last\n");
     }
     IsraeliList next= createIsraeliListNode(item);
     if(!next)
@@ -298,21 +288,31 @@ bool IsraeliQueueContains(IsraeliQueue q, void * item)
 
 void* IsraeliQueueDequeue(IsraeliQueue q)
 {
-    if(!q || !q->m_size)
+    if(!q || !q->m_size|| !q->m_listHead)
     {
         return NULL;
+    }
+    if(!q->m_listHead->m_Right)
+    {
+        void * item = q->m_listHead->m_item;
+        q->m_listHead =NULL;
+        q->m_size--;
+        return item;
     }
     IsraeliList head = q->m_listHead;
     q->m_listHead = q->m_listHead->m_Right;
     head->m_Right =NULL;
     head->m_Left =NULL;
     q->m_size--;
-    if(q->m_size > 1)
+    if(q->m_listHead)
     {
-         q->m_listHead->m_Left =NULL;
+        q->m_listHead->m_Left =NULL;
     }
     void * item = head->m_item;
-    destroyIsraeliList(head);
+    if(head)
+    {
+        destroyIsraeliList(head);
+    }
     return item;
     
 }
@@ -524,7 +524,10 @@ void IsraeliQueueDestroy(IsraeliQueue q)
     {
         destroyFrindshipList(q->m_listFrindshipHead);
     }
-    free(q);
+    if(q != NULL)
+    {
+        //free(q);
+    }
 }
 
 
