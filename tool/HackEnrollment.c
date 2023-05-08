@@ -858,10 +858,6 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
     {
         free(begginingOfLine);
     }
-    printf("printing system after read Enrollment \n");
-    printEnrollmentSystem(sysCopy);
-
-
     return sysCopy;   
 }
 void printHacker(hackersList hacker)
@@ -953,6 +949,14 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
     hackersList hackerRunner = sys->m_hackers;
     while(hackerRunner)
     {
+        studentList hacker = findStudent(sys->m_studentList, hackerRunner->m_id);
+        if(!hacker)
+        {
+            EnrollmentSystem temp = sys;
+            sys = copySys;
+            deleteEnrollmentSystem(temp);
+            return;
+        }
         courseList courseRunner = hackerRunner->m_courseList;
         while(courseRunner)
         {
@@ -966,7 +970,8 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
             }
             if(courseWanted->m_israeliQueue)
             {
-                if(IsraeliQueueEnqueue(courseWanted->m_israeliQueue, hackerRunner->m_hacker) != ISRAELIQUEUE_SUCCESS)
+                
+                if(IsraeliQueueEnqueue(courseWanted->m_israeliQueue, hacker) != ISRAELIQUEUE_SUCCESS)
                 {
                     EnrollmentSystem temp = sys;
                     sys = copySys;
@@ -984,6 +989,14 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
     hackerRunner = sys->m_hackers;
     while(hackerRunner)
     {
+       studentList hacker = findStudent(sys->m_studentList, hackerRunner->m_id);
+        if(!hacker)
+        {
+            EnrollmentSystem temp = sys;
+            sys = copySys;
+            deleteEnrollmentSystem(temp);
+            return;
+        }
         int numOfCoursesWanted = getListLength(hackerRunner->m_courseList);
         int numOfCoursesGot = 0;
         courseList courseRunner = hackerRunner->m_courseList;
@@ -993,7 +1006,7 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
             printf("looking for course %d\n", courseRunner->m_id);
             courseList courseWanted = findCourse(sys->m_courseList, courseRunner->m_id);
             printf("course found %d\n", courseWanted->m_id);
-            printf("queue size %d", IsraeliQueueSize(courseWanted->m_israeliQueue));
+            printf("queue size %d\n", IsraeliQueueSize(courseWanted->m_israeliQueue));
             studentList temp = IsraeliQueueDequeue(courseWanted->m_israeliQueue);
             if(!temp)
             {
@@ -1004,12 +1017,21 @@ void hackEnrollment(EnrollmentSystem sys, FILE* out)
                 printf("got student %d\n", temp->m_id);
                 
             }
-            while(!compareStudents(hackerRunner->m_hacker, temp) && IsraeliQueueSize(courseWanted->m_israeliQueue) >0)
+            while(temp && !compareStudents(hacker, temp) && IsraeliQueueSize(courseWanted->m_israeliQueue) >0)
             {
                 printf("in while\n");
                 free(temp);
                 printf("trying to dequeue\n");
                 temp = IsraeliQueueDequeue(courseWanted->m_israeliQueue);
+                 if(!temp)
+                {
+                    printf("dequeue returned null\n");
+                }
+                else
+                {
+                    printf("got student %d\n", temp->m_id);
+                
+                }
                 printf("got dequeue\n");
                 counter++;
             }

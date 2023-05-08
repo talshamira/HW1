@@ -163,8 +163,10 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
         return ISRAELIQUEUE_BAD_PARAM;
     }
     IsraeliList placeHolder = findPlaceToEnter(q, item);
+    
     if(!placeHolder)
     {
+        printf("place holder was null creating new node\n");
         q->m_listHead = createIsraeliListNode(item);
         if(!q->m_listHead)
         {
@@ -172,6 +174,14 @@ IsraeliQueueError IsraeliQueueEnqueue(IsraeliQueue q, void * item)
         }
         q->m_size++;
         return ISRAELIQUEUE_SUCCESS;
+    }
+    if(placeHolder->m_Right)
+    {
+        printf("not last\n");
+    }
+    else
+    {
+        printf("place holder is last\n");
     }
     IsraeliList next= createIsraeliListNode(item);
     if(!next)
@@ -301,7 +311,9 @@ void* IsraeliQueueDequeue(IsraeliQueue q)
     {
          q->m_listHead->m_Left =NULL;
     }
-    return head;
+    void * item = head->m_item;
+    destroyIsraeliList(head);
+    return item;
     
 }
 
@@ -577,7 +589,7 @@ IsraeliList findPlaceToEnter (IsraeliQueue q, void * item)
                 found = true;
             }
         }
-        if(!found)
+        if(!found && runner->m_Right)
         {   
             runner = runner->m_Right;
         }
