@@ -586,6 +586,7 @@ IsraeliList findPlaceToEnter (IsraeliQueue q, void * item)
             if(foundRival)
             {
                 foundRival = false;
+                placeHolder = runner;
             }
             else
             {
@@ -600,6 +601,10 @@ IsraeliList findPlaceToEnter (IsraeliQueue q, void * item)
         {
             placeHolder = runner;
         }
+    }
+    if(isRival(placeHolder, item, q))
+    {
+        return runner;
     }
     return placeHolder;
 }

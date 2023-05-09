@@ -59,6 +59,7 @@ void deleteEnrollmentSystem(EnrollmentSystem sys);
 char* getNextString (char* line);
 int getRidOfSpace (char* input);
 void printEnrollmentSystem(EnrollmentSystem sys);
+bool isInRivalList (studentList rivalList, studentList student);
 
 courseList createCourseList(int id, int maxStudents)
 {
@@ -1071,7 +1072,10 @@ void printOutput(FILE* out, EnrollmentSystem sys)
                     fprintf(out,"%d", student->m_id);
                 }
             }
-            fputs("\n",out);
+            if(courseRunner->m_next)
+            {
+                fputs("\n",out);
+            }
         }
         courseRunner = courseRunner->m_next;
 
@@ -1091,22 +1095,22 @@ char upperToLowercase(char ch)
 int nameDistancei(void* hacker, void* student)
 {
     studentList student1 = hacker, student2 = student;
-    if(!student1->m_isHacker && !student2->m_hacker)
+    if(!student1->m_isHacker && !student2->m_isHacker)
     {
-        return 0;
+        return RIVELRY_BAR-1;
     }
     if(student1->m_isHacker)
     {
-        if(isInRivalList(student1->m_isHacker, student2))
+        if(isInRivalList(student1->m_isHacker->m_rivalList, student2))
         {
-            return 0;
+            return RIVELRY_BAR-1;
         }
     }
     else
     {
-        if(isInRivalList(student2->m_isHacker, student2))
+        if(isInRivalList(student2->m_isHacker->m_rivalList, student2))
         {
-            return 0;
+            return RIVELRY_BAR-1;
         }
     }
     int distance = stringDistancei(student1->m_name, student2->m_name);
@@ -1116,22 +1120,22 @@ int nameDistancei(void* hacker, void* student)
 int nameDistance(void* hacker, void* student)
 {
     studentList student1 = hacker, student2 = student;
-    if(!student1->m_isHacker && !student2->m_hacker)
+    if(!student1->m_isHacker && !student2->m_isHacker)
     {
-        return 0;
+        return RIVELRY_BAR-1;
     }
     if(student1->m_isHacker)
     {
-        if(isInRivalList(student1->m_isHacker, student2))
+        if(isInRivalList(student1->m_isHacker->m_rivalList, student2))
         {
-            return 0;
+            return RIVELRY_BAR-1;
         }
     }
     else
     {
-        if(isInRivalList(student2->m_isHacker, student2))
+        if(isInRivalList(student2->m_isHacker->m_rivalList, student2))
         {
-            return 0;
+            return RIVELRY_BAR-1;
         }
     }
     int distance = stringDistance(student1->m_name, student2->m_name);
@@ -1190,9 +1194,9 @@ int stringDistancei(char* name1, char* name2) //A == a
 
     return sum;
 }
-bool isInRivalList (studentList hacker, studentList student)
+bool isInRivalList (studentList rivalList, studentList student)
 {
-    if(!findStudent(hacker->m_rivalList, student->m_id))
+    if(!findStudent(rivalList, student->m_id))
     {
         return false;
     }
@@ -1201,47 +1205,47 @@ bool isInRivalList (studentList hacker, studentList student)
 int isInFriendList (void* hacker, void* student)
 {
     studentList student1 = hacker, student2 = student;
-    if(!student1->m_isHacker && !student2->m_hacker)
+    if(!student1->m_isHacker && !student2->m_isHacker)
     {
-        return 0;
+        return RIVELRY_BAR-1;
     }
     if(student1->m_isHacker)
     {
-        if(isInRivalList(student1->m_isHacker, student2) || !findStudent(student1->m_isHacker->m_friendList, student2->m_id))
+        if(isInRivalList(student1->m_isHacker->m_rivalList, student2) || !findStudent(student1->m_isHacker->m_friendList, student2->m_id))
         {
-            return 0;
+            return RIVELRY_BAR-1;
         }
     }
     else
     {
-        if(isInRivalList(student2->m_isHacker, student2) || !findStudent(student2->m_isHacker->m_friendList, student1->m_id))
+        if(isInRivalList(student2->m_isHacker->m_rivalList, student2) || !findStudent(student2->m_isHacker->m_friendList, student1->m_id))
         {
-            return 0;
+            return RIVELRY_BAR-1;
         }
     }
    
-    return FRIENDSHIP_BAR;
+    return FRIENDSHIP_BAR+1;
 }
 
 int idDifference(void* student1, void* student2)
 {
     studentList firstStudent = student1, secondStudent = student2;
-    if(!firstStudent->m_isHacker && !secondStudent->m_hacker)
+    if(!firstStudent->m_isHacker && !secondStudent->m_isHacker)
     {
-        return 0;
+        return RIVELRY_BAR-1;
     }
     if(firstStudent->m_isHacker)
     {
         if(isInRivalList(firstStudent->m_isHacker->m_rivalList, secondStudent))
         {
-            return 0;
+            return RIVELRY_BAR-1;
         }
     }
     else
     {
         if(isInRivalList(secondStudent->m_isHacker->m_rivalList, firstStudent))
         {
-            return 0;
+            return RIVELRY_BAR-1;
         }
     }
     return abs(firstStudent->m_id - secondStudent->m_id);
