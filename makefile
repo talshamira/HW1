@@ -1,15 +1,19 @@
 CC=gcc
-OBJS=tool/HackEnrollment.o IsraeliQueue.o tool/main.o
+OBJS=HackEnrollment.o IsraeliQueue.o main.o
 EXEC=HackEnrollment 
-DEBUG=-g
-CFLAGS=-std=c99 -lm -I/home/tal.shamir/ex1 -Itool -Wall -Werror -pedantic-errors -DNDEBUG $(DEBUG)
+DEBUG_FLAG=-g
+COMP_FLAG=-std=c99 -I/new_home/mtm/public/2223b/ex1 -Itool -Wall -Werror -pedantic-errors -DNDEBUG $(DEBUG) -lm
 
 $(EXEC): $(OBJS)
-	$(CC) $(CFLAGS)  $(DEBUG_FLAG) $(OBJS) -o $@
+	$(CC) $(DEBUG_FLAG) $(OBJS) -o $@ -lm
 
-HackEnrollment.o: tool/HackEnrollment.c tool/HackEnrollment.h IsraeliQueue.h
+HackEnrollment.o: tool/HackEnrollment.c tool/HackEnrollment.h 
+				  $(CC) -c $(DEBUG_FLAG) $(COMP_FLAG) tool/$*.c 
 IsraeliQueue.o: IsraeliQueue.c IsraeliQueue.h
-main.o: tool/main.c IsraeliQueue.h tool/HackEnrollment.h
+				$(CC) -c $(DEBUG_FLAG) $(COMP_FLAG) $*.c
+main.o: tool/main.c tool/HackEnrollment.h
+		$(CC) -c $(DEBUG_FLAG) $(COMP_FLAG) tool/$*.c
 
 clean:
 	rm -f $(OBJS) $(EXEC)
+
