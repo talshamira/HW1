@@ -43,19 +43,19 @@ int main(int argc, char** argv)
         }
     }
     FILE* studentsFile = fopen(argv[STUDENTS_INDEX + ifCaseSensitive], "r");
-    if (!studentsFile)
+    if (studentsFile == NULL)
     {
         return 0;
     }
 
     FILE* coursesFile = fopen(argv[COURSES_INDEX + ifCaseSensitive], "r");
-    if (!coursesFile)
+    if (coursesFile == NULL)
     {
         fclose(studentsFile);
         return 0;
     }
     FILE* hackersFile = fopen(argv[HACKERS_INDEX + ifCaseSensitive], "r");
-    if (!hackersFile)
+    if (hackersFile == NULL)
     {
         fclose(studentsFile);
         fclose(coursesFile);
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
     }
 
     FILE* queuesFile = fopen(argv[QUEUES_INDEX + ifCaseSensitive], "r");
-    if (!queuesFile)
+    if (queuesFile == NULL)
     {
         fclose(studentsFile);
         fclose(coursesFile);
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
     }
 
     FILE* target = fopen(argv[TARGET_INDEX + ifCaseSensitive], "w");
-    if (!target)
+    if (target == NULL)
     {
         fclose(studentsFile);
         fclose(coursesFile);
@@ -81,13 +81,13 @@ int main(int argc, char** argv)
         return 0;
     }
     EnrollmentSystem sys = createEnrollment(studentsFile, coursesFile, hackersFile);
-    if(!sys)
+    if(sys == NULL)
     {
         closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
         return 0;
     }
     EnrollmentSystem newSys = readEnrollment(sys, queuesFile);
-    if(!newSys)
+    if(newSys == NULL)
     {
         deleteEnrollmentSystem(sys);
         closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
@@ -100,6 +100,7 @@ int main(int argc, char** argv)
         return 0;
     }
     hackEnrollment(newSys, target);
+    deleteEnrollmentSystem(newSys);
     closeAllFiles(studentsFile, coursesFile, hackersFile, queuesFile, target);
     return 1;
 }

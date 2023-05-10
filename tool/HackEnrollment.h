@@ -13,8 +13,10 @@
 #define NUM_OF_COURSES_PARAMETERS 2
 #define NUM_OF_STUDENT_INPUTS 7
 #define CHUNK_SIZE 256
-#define MAX_ID_SIZE 999999999
-#define MIN_ID_SIZE 100000000
+#define MAX_ID_SIZE_POSITIVE 999999999
+#define MIN_ID_SIZE_POSITIVE 100000000
+#define MAX_ID_SIZE_NEGATIVE -10000000
+#define MIN_ID_SIZE_NEGATIVE -99999999
 #define MAX_GPA 100
 #define SEPERATOR ' '
 #define ID 0
@@ -44,7 +46,4 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues);
 void hackEnrollment(EnrollmentSystem sys, FILE* out);
 IsraeliQueueError ifLowerCaseNeeded(EnrollmentSystem sys, bool ifCaseSensitive);
 void deleteEnrollmentSystem(EnrollmentSystem sys);
-
-
-void printEnrollmentSystem(EnrollmentSystem sys);
 #endif
