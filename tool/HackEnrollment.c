@@ -663,6 +663,37 @@ char* getNextLine(FILE* file)
     return input;
 }
 
+bool copyFullStudentList(EnrollmentSystem copy, EnrollmentSystem sys)
+{
+    studentList firstStudent = NULL, studentRunner = sys->m_studentList;
+    while(studentRunner != NULL)
+    {
+        if(firstStudent == NULL)
+        {
+            copy->m_studentList = cloneStudentList(studentRunner);
+            if(copy->m_studentList == NULL)
+            {
+                deleteEnrollmentSystem(copy);
+                return false;
+            }
+            firstStudent = copy->m_studentList;
+        }
+        else
+        {
+            copy->m_studentList->m_next = cloneStudentList(studentRunner);
+            if(copy->m_studentList->m_next == NULL)
+            {
+                deleteEnrollmentSystem(copy);
+                return false;
+            }
+            copy->m_studentList = copy->m_studentList->m_next;
+        }
+        studentRunner = studentRunner->m_next;
+    }
+    copy->m_studentList = firstStudent;
+    return true;
+}
+
 EnrollmentSystem cloneEnrollmentSystem(EnrollmentSystem sys)
 {
     if(sys == NULL)
@@ -674,32 +705,10 @@ EnrollmentSystem cloneEnrollmentSystem(EnrollmentSystem sys)
     {
         return NULL;
     }
-    studentList firstStudent = NULL, studentRunner = sys->m_studentList;
-    while(studentRunner != NULL)
+    if(!copyFullStudentList(copy,sys))
     {
-        if(firstStudent == NULL)
-        {
-            copy->m_studentList = cloneStudentList(studentRunner);
-            if(copy->m_studentList == NULL)
-            {
-                deleteEnrollmentSystem(copy);
-                return NULL;
-            }
-            firstStudent = copy->m_studentList;
-        }
-        else
-        {
-            copy->m_studentList->m_next = cloneStudentList(studentRunner);
-            if(copy->m_studentList->m_next == NULL)
-            {
-                deleteEnrollmentSystem(copy);
-                return NULL;
-            }
-            copy->m_studentList = copy->m_studentList->m_next;
-        }
-        studentRunner = studentRunner->m_next;
+        return NULL;
     }
-    copy->m_studentList = firstStudent;
     courseList firstCourse = NULL, courseRunner = sys->m_courseList;
     while(courseRunner != NULL)
     {
@@ -726,8 +735,7 @@ EnrollmentSystem cloneEnrollmentSystem(EnrollmentSystem sys)
         courseRunner = courseRunner->m_next;
     }
     copy->m_courseList = firstCourse;
-    hackersList hackersRunnerOld = sys->m_hackers;
-    hackersList firstHacker = NULL;
+    hackersList hackersRunnerOld = sys->m_hackers, firstHacker = NULL;
     while(hackersRunnerOld)
     {
         if(firstHacker == NULL)
@@ -755,18 +763,9 @@ EnrollmentSystem cloneEnrollmentSystem(EnrollmentSystem sys)
     copy->m_hackers = firstHacker;
     return copy;
 }
-
-hackersList cloneHackerList(hackersList hacker, studentList sysStudents)
+bool cloneFriendsListForHacker(hackersList hacker, hackersList list)
 {
-    hackersList list = malloc (sizeof(*list));
-    if(list == NULL)
-    {
-        return NULL;
-    }
-    list->m_id = hacker->m_id;
-
-    studentList friendRunnerOld = hacker->m_friendList;
-    studentList firstFriend = NULL;
+    studentList friendRunnerOld = hacker->m_friendList, firstFriend = NULL;
     while(friendRunnerOld != NULL)
     {
         if(firstFriend == NULL)
@@ -775,7 +774,7 @@ hackersList cloneHackerList(hackersList hacker, studentList sysStudents)
             if(list->m_friendList == NULL)
             {
                 destroyHackerList(list);
-                return NULL;
+                return false;
             }
             firstFriend = list->m_friendList;
         }
@@ -785,13 +784,29 @@ hackersList cloneHackerList(hackersList hacker, studentList sysStudents)
             if(list->m_friendList->m_next == NULL)
             {
                 destroyHackerList(list);
-                return NULL;
+                return false;
             }
             list->m_friendList = list->m_friendList->m_next;
         }
         friendRunnerOld = friendRunnerOld->m_next;
     }
     list->m_friendList = firstFriend;
+    return true;
+}
+hackersList cloneHackerList(hackersList hacker, studentList sysStudents)
+{
+    hackersList list = malloc (sizeof(*list));
+    if(list == NULL)
+    {
+        return NULL;
+    }
+    list->m_id = hacker->m_id;
+
+    if(!cloneFriendsListForHacker(hacker, list))
+    {
+        return NULL;
+    }
+    
     
     studentList rivalRunnerOld = hacker->m_rivalList;
     studentList firstRival = NULL;
@@ -1168,22 +1183,19 @@ void printOutput(FILE* out, EnrollmentSystem sys)
     while(courseRunner != NULL)
     {
         int counter = 0;
-        if(IsraeliQueueSize(courseRunner->m_israeliQueue) >1 )
+        fprintf(out,"%d", courseRunner->m_id);
+        while(IsraeliQueueSize(courseRunner->m_israeliQueue) >0 && counter < courseRunner->m_maxStudents)
         {
-             fprintf(out,"%d", courseRunner->m_id);
-            while(IsraeliQueueSize(courseRunner->m_israeliQueue) >0 && counter < courseRunner->m_maxStudents)
+            studentList student = IsraeliQueueDequeue(courseRunner->m_israeliQueue);
+            if(student != NULL)
             {
-                studentList student = IsraeliQueueDequeue(courseRunner->m_israeliQueue);
-                if(student != NULL)
-                {
-                    fputs(" ",out);
-                    fprintf(out,"%d", student->m_id);
-                }
+                fputs(" ",out);
+                fprintf(out,"%d", student->m_id);
             }
-            if(courseRunner->m_next != NULL)
-            {
-                fputs("\n",out);
-            }
+        }
+        if(courseRunner->m_next != NULL)
+        {
+            fputs("\n",out);
         }
         courseRunner = courseRunner->m_next;
 
