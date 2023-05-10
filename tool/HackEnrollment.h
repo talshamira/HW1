@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "../IsraeliQueue.h"
+#include "IsraeliQueue.h"
 
 #define FRIENDSHIP_BAR 20
 #define RIVELRY_BAR 0

@@ -254,7 +254,6 @@ int IsraeliQueueSize(IsraeliQueue q)
         runner = runner->m_Right;
     }
     return counter;
-    //return q->m_size;
 }
 
 bool IsraeliQueueContains(IsraeliQueue q, void * item)

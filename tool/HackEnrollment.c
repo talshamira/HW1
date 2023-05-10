@@ -58,8 +58,12 @@ int getListLength(courseList course);
 void deleteEnrollmentSystem(EnrollmentSystem sys);
 char* getNextString (char* line);
 int getRidOfSpace (char* input);
-void printEnrollmentSystem(EnrollmentSystem sys);
 bool isInRivalList (studentList rivalList, studentList student);
+hackersList findHacker(hackersList hackers, int id);
+void fixPointers(hackersList copySysHacker, studentList copySysStudents, studentList sysStudents);
+
+
+
 
 courseList createCourseList(int id, int maxStudents)
 {
@@ -188,6 +192,8 @@ studentList cloneStudentList(studentList student)
     return list;
 }
 
+
+
 void destroyStudentList(studentList listHead)
 {
     while(listHead != NULL)
@@ -234,6 +240,20 @@ void destroyHackerList(hackersList listHead)
         destroyStudentList(toDelete->m_friendList);
         free(toDelete);
     }
+}
+
+hackersList findHacker(hackersList hackers, int id)
+{
+    if(hackers == NULL)
+    {
+        return NULL;
+    }
+    hackersList runner = hackers;
+    while(runner != NULL && runner->m_id != id)
+    {
+        runner = runner->m_next;
+    }
+    return runner;
 }
 
 studentList findStudent(studentList students, int id)
@@ -426,7 +446,6 @@ courseList getCoursesForHackers(FILE* hackers, EnrollmentSystem hackEnrollment, 
     courseList hackersFirstCourses = NULL, hackersCourseRunner = NULL;
     while(length > 0)
     {
-        printf("line: %s", line);
         char* tempCourse = getNextString(line);
         if(tempCourse == NULL)
         {
@@ -434,9 +453,7 @@ courseList getCoursesForHackers(FILE* hackers, EnrollmentSystem hackEnrollment, 
             free(begginingOfLine);
             return NULL;
         }
-        printf("line: %s", line);
         line = line + strlen(tempCourse) +1;
-        printf("line: %s", line);
         int courseNumber = atoi(tempCourse);
         free(tempCourse);
         courseList wantedCourse = findCourse(hackEnrollment->m_courseList, courseNumber);
@@ -543,6 +560,7 @@ bool getHackersFromFile(FILE* hackers, EnrollmentSystem hackEnrollment)
         } 
         line = line + strlen(tempId) +1;
         int id = atoi(tempId);
+        studentList studentHacker = findStudent(hackEnrollment->m_studentList, id);
         free(tempId);
         free(begginingOfLine);
         courseList hackersFirstCourses = getCoursesForHackers(hackers, hackEnrollment, line);
@@ -571,7 +589,6 @@ bool getHackersFromFile(FILE* hackers, EnrollmentSystem hackEnrollment)
                 return false;
             }
             firstHacker = hackEnrollment->m_hackers;
-            
         }
         else
         {
@@ -585,6 +602,7 @@ bool getHackersFromFile(FILE* hackers, EnrollmentSystem hackEnrollment)
             }
             hackEnrollment->m_hackers = hackEnrollment->m_hackers->m_next;
         }
+        studentHacker->m_isHacker = hackEnrollment->m_hackers;
         line = getNextLine(hackers);
         begginingOfLine = line;
     }
@@ -615,7 +633,6 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
     {
         return NULL;
     }
-    printEnrollmentSystem(hackEnrollment);
     return hackEnrollment;
 }
 
@@ -646,7 +663,7 @@ char* getNextString (char* line)
 
 char* getNextLine(FILE* file)
 {
-    char buffer [CHUNK_SIZE];
+    /*char buffer [CHUNK_SIZE];
     char* input = NULL;
     int inputLength = 0, tempLength = 0;
     do
@@ -656,11 +673,47 @@ char* getNextLine(FILE* file)
             return NULL;
         }
         tempLength = strlen(buffer);
+        if(inputLength != 0)
+        {
+            free(input);
+        }
         input = (char *) malloc(sizeof(input)*tempLength+1);
         strcpy(input+inputLength, buffer);
         inputLength += tempLength;
     }while(tempLength == CHUNK_SIZE-1 &&  buffer[CHUNK_SIZE -2] != END_OF_LINE);
-    return input;
+    return input;*/
+
+char buffer [CHUNK_SIZE];
+    char* line = NULL;
+    int tempLength = 0;
+    if(!fgets(buffer, CHUNK_SIZE, file))
+    {
+        return NULL;
+    }
+    tempLength = strlen(buffer);
+    line = (char*) malloc((tempLength+1));
+    if(line == NULL)
+    {
+        return "NULL";
+    }
+    strcpy(line, buffer);
+    while(tempLength == CHUNK_SIZE-1 &&  buffer[CHUNK_SIZE -2] != END_OF_LINE)
+    {
+        if(!fgets(buffer, CHUNK_SIZE, file))
+        {
+            return "NULL";
+        }
+        tempLength = strlen(buffer);
+        line = (char*) realloc(line, (tempLength+strlen(line)+1));
+        if(line == NULL)
+        {
+            return NULL;
+        }
+        strcat(line, buffer);
+    } 
+    //printf("%s", line);
+    return line;
+
 }
 
 bool copyFullStudentList(EnrollmentSystem copy, EnrollmentSystem sys)
@@ -761,8 +814,25 @@ EnrollmentSystem cloneEnrollmentSystem(EnrollmentSystem sys)
         hackersRunnerOld = hackersRunnerOld->m_next;
     }
     copy->m_hackers = firstHacker;
+    fixPointers(copy->m_hackers, copy->m_studentList, sys->m_studentList);
     return copy;
 }
+
+void fixPointers(hackersList copySysHacker, studentList copySysStudents, studentList sysStudents)
+{
+    studentList oldStudentRunner = sysStudents, newStudentsRunner = copySysStudents;
+    while(oldStudentRunner != NULL && newStudentsRunner != NULL)
+    {
+        if(oldStudentRunner->m_isHacker != NULL)
+        {
+            newStudentsRunner->m_isHacker = findHacker(copySysHacker, newStudentsRunner->m_id);
+        }
+        oldStudentRunner = oldStudentRunner->m_next;
+        newStudentsRunner = newStudentsRunner->m_next;
+    } 
+}
+
+
 bool cloneFriendsListForHacker(hackersList hacker, hackersList list)
 {
     studentList friendRunnerOld = hacker->m_friendList, firstFriend = NULL;
@@ -881,18 +951,11 @@ courseList cloneCourseList (courseList course)
         return NULL;
     }
     list->m_next = NULL;
-    if(course->m_israeliQueue == NULL)
+    list->m_israeliQueue = IsraeliQueueClone(course->m_israeliQueue);
+    if(list->m_israeliQueue == NULL  && course->m_israeliQueue != NULL)
     {
-        list->m_israeliQueue = NULL;
-    }
-    else
-    {
-        list->m_israeliQueue = IsraeliQueueClone(course->m_israeliQueue);
-        if(list->m_israeliQueue == NULL)
-        {
-            destroyCourseList(list);
-            return NULL;
-        }
+        destroyCourseList(list);
+        return NULL;
     }
     return list;
 }
@@ -908,7 +971,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
     char* input = getNextLine(queues);
     char* begginingOfLine = input;
     int length = strlen(input);
-    while(length >0)
+    while(input != NULL)
     {
         /*
         if(!input)
@@ -937,7 +1000,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
         length = strlen(input);
         while(length >0)
         {
-            input = input + getRidOfSpace(input);
+            //input = input + getRidOfSpace(input);
             char* studentId = getNextString(input);
             if(studentId == NULL)
             {
@@ -950,6 +1013,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
             if(student == NULL)
             {
                 deleteEnrollmentSystem(sysCopy);
+                free(studentId);
                 free(begginingOfLine);
                 return NULL;
             }
@@ -973,59 +1037,7 @@ EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues)
     }
     return sysCopy;   
 }
-//********************************************************************************************************************* TODO remove unneccery functions
-void printHacker(hackersList hacker)
-{
-    printf("printing hacker's %d courses\n", hacker->m_id);
-    courseList courseRunner = hacker->m_courseList;
-    while(courseRunner != NULL)
-    {
-        printf("course: %d\n", courseRunner->m_id);
-        courseRunner = courseRunner->m_next;
-    }
-    printf("printing friends list\n");
-    studentList friends = hacker->m_friendList;
-    while(friends != NULL)
-    {
-        printf("friend: %d\n", friends->m_id);
-        friends = friends->m_next;
-    }
-     printf("printing rivals list\n");
-    studentList rivals = hacker->m_rivalList;
-    while(rivals != NULL)
-    {
-        printf("rival: %d\n", rivals->m_id);
-        rivals = rivals->m_next;
-    }
-}
-void printEnrollmentSystem(EnrollmentSystem sys)
-{
-    courseList courseRunner = sys->m_courseList;
-    printf("system courses:\n");
-    while(courseRunner != NULL)
-    {
-        printf("%d\n", courseRunner->m_id);
-        if(courseRunner->m_israeliQueue)
-        {
-            printf("course %d has a queue\n",courseRunner->m_id);
-        }
-        courseRunner = courseRunner->m_next;
-    }
-    studentList studentRunner = sys->m_studentList;
-    printf("system students:\n");
-    while(studentRunner != NULL)
-    {
-        printf("%d\n", studentRunner->m_id);
-        studentRunner = studentRunner->m_next;
-    }
-    hackersList hackersRunner = sys->m_hackers;
-    printf("system hackers:\n");
-    while(hackersRunner != NULL)
-    {
-        printHacker(hackersRunner);
-        hackersRunner = hackersRunner->m_next;
-    }
-}
+
 
 
 int getRidOfSpace (char* input)
@@ -1083,16 +1095,17 @@ bool insertHackers (EnrollmentSystem sys)
             }
             if(courseWanted->m_israeliQueue != NULL)
             {
-                printf("enquing hacker %d to course %d\n",hacker->m_id, courseWanted->m_id);
-                if(IsraeliQueueEnqueue(courseWanted->m_israeliQueue, hacker) != ISRAELIQUEUE_SUCCESS)
+                if(!IsraeliQueueContains(courseWanted->m_israeliQueue, hacker))
                 {
-                    EnrollmentSystem temp = sys;
-                    sys = copySys;
-                    deleteEnrollmentSystem(temp);
-                    return false;
+                    if(IsraeliQueueEnqueue(courseWanted->m_israeliQueue, hacker) != ISRAELIQUEUE_SUCCESS)
+                    {
+                        EnrollmentSystem temp = sys;
+                        sys = copySys;
+                        deleteEnrollmentSystem(temp);
+                        return false;
+                    }
                 }
             }
-            
             courseRunner = courseRunner->m_next;
         }
         hackerRunner = hackerRunner->m_next;
@@ -1183,23 +1196,29 @@ void printOutput(FILE* out, EnrollmentSystem sys)
     while(courseRunner != NULL)
     {
         int counter = 0;
-        fprintf(out,"%d", courseRunner->m_id);
+        bool addedCourse = false;
+        if(IsraeliQueueSize(courseRunner->m_israeliQueue) >0)
+        {
+            fprintf(out,"%d", courseRunner->m_id);
+            addedCourse = true;
+        }
         while(IsraeliQueueSize(courseRunner->m_israeliQueue) >0 && counter < courseRunner->m_maxStudents)
         {
             studentList student = IsraeliQueueDequeue(courseRunner->m_israeliQueue);
             if(student != NULL)
             {
+                counter++;
                 fputs(" ",out);
                 fprintf(out,"%d", student->m_id);
             }
         }
-        if(courseRunner->m_next != NULL)
+        if(/*courseRunner->m_next != NULL &&*/ addedCourse)
         {
             fputs("\n",out);
         }
         courseRunner = courseRunner->m_next;
-
     }
+
 }
 
 char upperToLowercase(char ch)
@@ -1266,52 +1285,46 @@ int nameDistance(void* hacker, void* student)
 int stringDistance(char* name1, char* name2) //A != a
 {
     int sum = 0;
-    int i = 0;
-
-    while (name1[i] || name2[i])
+    int nameCounter1= 0, nameCounter2 = 0;
+    while (name1[nameCounter1] != '\0' && name2[nameCounter2] != '\0')
     {
-        if(!name1[i])
-        {
-            sum = sum + upperToLowercase(name2[i]);
-        }
-        else if(!name2[i])
-        {
-            sum = sum + upperToLowercase(name1[i]);
-        }
-        else
-        {
-            sum = sum + abs(name1[i] - name2[i]);
-        }
-
-        i++;
+        sum = sum + abs(name1[nameCounter1] - name2[nameCounter2]);
+        nameCounter1++;
+        nameCounter2++;
     }
-
+    while(name1[nameCounter1] != '\0')
+    {
+        sum = sum + name1[nameCounter1];
+        nameCounter1++;
+    }
+    while(name2[nameCounter2] != '\0')
+    {
+        sum = sum + name2[nameCounter2];
+        nameCounter2++;
+    }
     return sum;
 }
 
 int stringDistancei(char* name1, char* name2) //A == a
 {
     int sum = 0;
-    int i = 0;
-
-    while (name1[i] || name2[i])
+    int nameCounter1= 0, nameCounter2 = 0;
+    while (name1[nameCounter1] != '\0' && name2[nameCounter2] != '\0')
     {
-        if(!name1[i])
-        {
-            sum = sum + upperToLowercase(name2[i]);
-        }
-        else if(!name2[i])
-        {
-            sum = sum + upperToLowercase(name1[i]);
-        }
-        else
-        {
-            sum = sum + abs(upperToLowercase(name1[i]) - upperToLowercase(name2[i]));
-        }
-
-        i++;
+        sum = sum + abs(upperToLowercase(name1[nameCounter1]) - upperToLowercase(name2[nameCounter2]));
+        nameCounter1++;
+        nameCounter2++;
     }
-
+    while(name1[nameCounter1] != '\0')
+    {
+        sum = sum + upperToLowercase(name1[nameCounter1]);
+        nameCounter1++;
+    }
+    while(name1[nameCounter1] != '\0')
+    {
+        sum = sum + upperToLowercase(name2[nameCounter1]);
+        nameCounter2++;
+    }
     return sum;
 }
 bool isInRivalList (studentList rivalList, studentList student)
