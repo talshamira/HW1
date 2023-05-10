@@ -257,13 +257,9 @@ void deleteEnrollmentSystem(EnrollmentSystem sys)
     destroyStudentList(sys->m_studentList);
     free(sys);
 }
-EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
+
+bool getCourseFromFile (FILE* courses, EnrollmentSystem hackEnrollment)
 {
-    EnrollmentSystem hackEnrollment = (EnrollmentSystem) malloc(sizeof(*hackEnrollment));
-    if(hackEnrollment == NULL)
-    {
-        return NULL;
-    }
     courseList firstCourse = NULL;
     int gotToEOF = 0;
     FriendshipFunction functions[NUM_OF_FUNCTIONS_WITHOUT_I]  = {&idDifference, &isInFriendList, NULL};
@@ -274,7 +270,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
         if(gotToEOF != NUM_OF_COURSES_PARAMETERS && gotToEOF != EOF)
         {
             deleteEnrollmentSystem(hackEnrollment);
-            return NULL;
+            return false;
         }
         if(maxStudents != 0)
         {
@@ -283,8 +279,9 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 hackEnrollment->m_courseList = createCourseList(id, maxStudents);
                 if(hackEnrollment->m_courseList == NULL)
                 {
+                    
                     deleteEnrollmentSystem(hackEnrollment);
-                    return NULL;
+                    return false;
                 }
                 firstCourse = hackEnrollment->m_courseList;
             }
@@ -294,7 +291,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 if(hackEnrollment->m_courseList->m_next == NULL)
                 {
                     deleteEnrollmentSystem(hackEnrollment);
-                    return NULL;
+                    return false;
                 }
                 hackEnrollment->m_courseList = hackEnrollment->m_courseList->m_next;
             }
@@ -307,11 +304,16 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
         if(firstCourse->m_israeliQueue == NULL)
         {
             deleteEnrollmentSystem(hackEnrollment);
-            return NULL;
+            return false;
         }
         firstCourse = firstCourse->m_next;
     }
-    
+    return true;
+}
+
+
+bool getStudentsFromFile (FILE* students, EnrollmentSystem hackEnrollment)
+{
     studentList runner = NULL;
     hackEnrollment->m_studentList = NULL;
     char* inputs[NUM_OF_STUDENT_INPUTS] ={NULL} ;
@@ -319,11 +321,6 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
     char* begginingOfLine = line;
     while(line !=NULL && *line!=EOF)
     {
-        /*if(!line)
-        {
-            deleteEnrollmentSystem(hackEnrollment);
-            return NULL;
-        }*/
         for(int i = 0; i < NUM_OF_STUDENT_INPUTS; i++)
         {
             inputs[i] = getNextString(line);
@@ -337,7 +334,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 destroyCourseList(hackEnrollment->m_courseList);
                 destroyStudentList(hackEnrollment->m_studentList);
                 free(hackEnrollment);
-                return NULL;
+                return false;
             }
             line = line + 1 + strlen(inputs[i]);
         }
@@ -354,7 +351,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 destroyStudentList(hackEnrollment->m_studentList);
                 free(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
         }
         else
@@ -369,7 +366,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 destroyStudentList(hackEnrollment->m_studentList);
                 free(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
         }
         if(hackEnrollment->m_studentList == NULL)
@@ -386,7 +383,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 destroyStudentList(hackEnrollment->m_studentList);
                 free(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             runner = hackEnrollment->m_studentList;
         }
@@ -404,7 +401,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 destroyStudentList(hackEnrollment->m_studentList);
                 free(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             runner = runner->m_next; 
         }
@@ -416,7 +413,11 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
         line = getNextLine(students);
         begginingOfLine = line;
     }
-    
+    return true;
+}
+
+bool getHackersFromFile(FILE* hackers, EnrollmentSystem hackEnrollment)
+{
     hackEnrollment->m_hackers =NULL;
     hackersList firstHacker = NULL;
     courseList hackersFirstCourses = NULL;
@@ -425,8 +426,8 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
     studentList hackerRivalsRunner = NULL;
     studentList firstFriends = NULL;
     studentList firstRivals = NULL;
-    line = getNextLine(hackers);
-    begginingOfLine = line;
+    char* line = getNextLine(hackers);
+    char* begginingOfLine = line;
     int length = strlen(line);
     while(length > 0)
     {  
@@ -435,7 +436,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
         {
             deleteEnrollmentSystem(hackEnrollment);
             free(begginingOfLine);
-            return NULL;
+            return false;
         } 
         line = line + strlen(tempId) +1;
         int id = atoi(tempId);
@@ -443,11 +444,6 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
         free(begginingOfLine);
         line = getNextLine(hackers);
         begginingOfLine = line;
-        /*if(!line)
-        {
-            deleteEnrollmentSystem(hackEnrollment);
-            return NULL;
-        }*/
         length = strlen(line);
         while(length > 0)
         {
@@ -456,7 +452,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             {
                 deleteEnrollmentSystem(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             line = line + strlen(tempCourse) +1;
             int courseNumber = atoi(tempCourse);
@@ -466,7 +462,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             {
                 deleteEnrollmentSystem(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             if(hackersFirstCourses == NULL)
             {
@@ -475,7 +471,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 {
                     deleteEnrollmentSystem(hackEnrollment);
                     free(begginingOfLine);
-                    return NULL;
+                    return false;
                 }
                 hackersFirstCourses = hackersCourseRunner;
             }
@@ -486,7 +482,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 {
                     deleteEnrollmentSystem(hackEnrollment);
                     free(begginingOfLine);
-                    return NULL;
+                    return false;
                 }
                 hackersCourseRunner = hackersCourseRunner->m_next;
             }
@@ -495,11 +491,6 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
         free(begginingOfLine);
         line = getNextLine(hackers);
         begginingOfLine = line;
-        /*if(!line)
-        {
-            deleteEnrollmentSystem(hackEnrollment);
-            return NULL;
-        }*/
         length = strlen(line);
         while(length > 0)
         {
@@ -508,7 +499,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             {
                 deleteEnrollmentSystem(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             } 
             line = line + strlen(tempStudent) +1;
             int studentId = atoi(tempStudent);
@@ -518,7 +509,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             {
                 deleteEnrollmentSystem(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             if(firstFriends == NULL)
             {
@@ -527,7 +518,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 {
                     deleteEnrollmentSystem(hackEnrollment);
                     free(begginingOfLine);
-                    return NULL;
+                    return false;
                 }
                 firstFriends = hackerFriendRunner;
             }
@@ -538,7 +529,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 {
                     deleteEnrollmentSystem(hackEnrollment);
                     free(begginingOfLine);
-                    return NULL;
+                    return false;
                 }
                 hackerFriendRunner = hackerFriendRunner->m_next;
             }
@@ -562,7 +553,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             {
                 deleteEnrollmentSystem(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             line = line + strlen(tempStudent)+1;
             int studentId = atoi(tempStudent);
@@ -572,7 +563,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             {
                 deleteEnrollmentSystem(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             if(firstRivals == NULL)
             {
@@ -581,7 +572,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 {
                     deleteEnrollmentSystem(hackEnrollment);
                     free(begginingOfLine);
-                    return NULL;
+                    return false;
                 }
                 firstRivals = hackerRivalsRunner;
             }
@@ -592,7 +583,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
                 {
                     deleteEnrollmentSystem(hackEnrollment);
                     free(begginingOfLine);
-                    return NULL;
+                    return false;
                 }
                 hackerRivalsRunner = hackerRivalsRunner->m_next;
             }
@@ -606,7 +597,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             {
                 deleteEnrollmentSystem(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             firstHacker = hackEnrollment->m_hackers;
             
@@ -619,7 +610,7 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
             {
                 deleteEnrollmentSystem(hackEnrollment);
                 free(begginingOfLine);
-                return NULL;
+                return false;
             }
             hackEnrollment->m_hackers = hackEnrollment->m_hackers->m_next;
         }
@@ -630,6 +621,28 @@ EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
         free(begginingOfLine);
     }
     hackEnrollment->m_hackers = firstHacker;
+    return true;
+}
+
+EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers)
+{
+    EnrollmentSystem hackEnrollment = (EnrollmentSystem) malloc(sizeof(*hackEnrollment));
+    if(hackEnrollment == NULL)
+    {
+        return NULL;
+    }
+    if(!getCourseFromFile(courses, hackEnrollment))
+    {
+        return NULL;
+    }
+    if(!getStudentsFromFile(students, hackEnrollment))
+    {
+        return NULL;
+    }
+    if(!getHackersFromFile(hackers, hackEnrollment))
+    {
+        return NULL;
+    }
     return hackEnrollment;
 }
 
