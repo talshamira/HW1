@@ -311,13 +311,21 @@ bool getCourseFromFile (FILE* courses, EnrollmentSystem hackEnrollment)
     return true;
 }
 
-
+bool abortForGetStudentsFromFile(courseList courseListToDestroy, studentList studentListToDestroy, 
+                                    EnrollmentSystem val1ToFree, char* val2ForFree)
+{
+    destroyCourseList(courseListToDestroy);
+    destroyStudentList(studentListToDestroy);
+    free(val1ToFree);
+    free(val2ForFree);
+    return false;
+}
 bool getStudentsFromFile (FILE* students, EnrollmentSystem hackEnrollment)
 {
     studentList runner = NULL;
     hackEnrollment->m_studentList = NULL;
-    char* inputs[NUM_OF_STUDENT_INPUTS] ={NULL} ;
-    char* line = getNextLine(students);
+    char* inputs[NUM_OF_STUDENT_INPUTS] ={NULL};
+    char* line = getNextLine(students) ;
     char* begginingOfLine = line;
     while(line !=NULL && *line!=EOF)
     {
@@ -330,16 +338,14 @@ bool getStudentsFromFile (FILE* students, EnrollmentSystem hackEnrollment)
                 {
                     free(inputs[j]);
                 }
-                free(begginingOfLine);
-                destroyCourseList(hackEnrollment->m_courseList);
-                destroyStudentList(hackEnrollment->m_studentList);
-                free(hackEnrollment);
-                return false;
+                
+                return abortForGetStudentsFromFile(hackEnrollment->m_courseList, hackEnrollment->m_studentList,
+                                                    hackEnrollment, begginingOfLine);
             }
             line = line + 1 + strlen(inputs[i]);
         }
         int id = atoi(inputs[ID]), totalCredits = atoi(inputs[TOTAL_CREDITS]), gpa =atoi(inputs[GPA]);
-        if(id > 0)
+        if(id>0 && (id<MIN_ID_SIZE_POSITIVE || id>MAX_ID_SIZE_POSITIVE || totalCredits<0 || gpa>MAX_GPA || gpa<0))
         {
             if(id<MIN_ID_SIZE_POSITIVE || id > MAX_ID_SIZE_POSITIVE || totalCredits < 0 || gpa > MAX_GPA || gpa<0)
             {
@@ -347,27 +353,18 @@ bool getStudentsFromFile (FILE* students, EnrollmentSystem hackEnrollment)
                 {
                     free(inputs[i]);
                 }
-                destroyCourseList(hackEnrollment->m_courseList);
-                destroyStudentList(hackEnrollment->m_studentList);
-                free(hackEnrollment);
-                free(begginingOfLine);
-                return false;
+                return abortForGetStudentsFromFile(hackEnrollment->m_courseList, hackEnrollment->m_studentList,
+                                                    hackEnrollment, begginingOfLine);
             }
         }
-        else
+        else if(id<MIN_ID_SIZE_NEGATIVE || id > MAX_ID_SIZE_NEGATIVE || totalCredits < 0 || gpa > MAX_GPA || gpa<0)
         {
-            if(id<MIN_ID_SIZE_NEGATIVE || id > MAX_ID_SIZE_NEGATIVE || totalCredits < 0 || gpa > MAX_GPA || gpa<0)
+            for(int i = 0; i < NUM_OF_STUDENT_INPUTS; i++)
             {
-                for(int i = 0; i < NUM_OF_STUDENT_INPUTS; i++)
-                {
-                    free(inputs[i]);
-                }
-                destroyCourseList(hackEnrollment->m_courseList);
-                destroyStudentList(hackEnrollment->m_studentList);
-                free(hackEnrollment);
-                free(begginingOfLine);
-                return false;
+                free(inputs[i]);
             }
+            return abortForGetStudentsFromFile(hackEnrollment->m_courseList, hackEnrollment->m_studentList,
+                                                hackEnrollment, begginingOfLine);
         }
         if(hackEnrollment->m_studentList == NULL)
         {
@@ -379,11 +376,8 @@ bool getStudentsFromFile (FILE* students, EnrollmentSystem hackEnrollment)
                 {
                     free(inputs[i]);
                 }
-                destroyCourseList(hackEnrollment->m_courseList);
-                destroyStudentList(hackEnrollment->m_studentList);
-                free(hackEnrollment);
-                free(begginingOfLine);
-                return false;
+                return abortForGetStudentsFromFile(hackEnrollment->m_courseList, hackEnrollment->m_studentList,
+                                                    hackEnrollment, begginingOfLine);
             }
             runner = hackEnrollment->m_studentList;
         }
@@ -397,11 +391,8 @@ bool getStudentsFromFile (FILE* students, EnrollmentSystem hackEnrollment)
                 {
                     free(inputs[i]);
                 }
-                destroyCourseList(hackEnrollment->m_courseList);
-                destroyStudentList(hackEnrollment->m_studentList);
-                free(hackEnrollment);
-                free(begginingOfLine);
-                return false;
+                return abortForGetStudentsFromFile(hackEnrollment->m_courseList, hackEnrollment->m_studentList,
+                                                    hackEnrollment, begginingOfLine);
             }
             runner = runner->m_next; 
         }

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "IsraeliQueue.h"
+#include "../IsraeliQueue.h"
 
 #define FRIENDSHIP_BAR 20
 #define RIVELRY_BAR 0
@@ -37,13 +37,34 @@ typedef struct hackersList * hackersList;
 typedef struct studentList * studentList;
 typedef struct courseList * courseList;
 
-/**Creates EnrollmentSystem with info of the students and the courses
- * .*/
+/**
+ * Gets files with information about students, courses and hackers, 
+ * Creates EnrollmentSystem with this information.
+ * Returns NULL in case of a problem.
+ **/
 EnrollmentSystem createEnrollment(FILE* students, FILE* courses, FILE* hackers);
 
+/**
+ * Gets enrollment system and file with queue 
+ * Creates registration queues, adds to the EnrollmentSystem and returns it.
+ * Returns NULL in case of a problem.
+ **/
 EnrollmentSystem readEnrollment(EnrollmentSystem sys, FILE* queues);
 
+/**
+ * Gets enrollment system and target file. 
+ * Updates the registration queues with the hackers requests if posibble. 
+ * If not, writes acordinglly to the target and ends the program.
+ **/
 void hackEnrollment(EnrollmentSystem sys, FILE* out);
+
+/**
+ * Updates if case sensitive
+ **/
 IsraeliQueueError ifLowerCaseNeeded(EnrollmentSystem sys, bool ifCaseSensitive);
+
+/**
+ * deletes the EnrollmentSystem it gets
+ **/
 void deleteEnrollmentSystem(EnrollmentSystem sys);
 #endif
